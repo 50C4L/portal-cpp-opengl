@@ -1,7 +1,10 @@
 ﻿#include "Application.h"
 
+#include <iostream>
+
 #include <GL/glew.h>
 #include <GL/glut.h>
+#include <GL/freeglut.h>
 
 using namespace portal;
 
@@ -42,6 +45,7 @@ Application::GLUTRenderCallback()
 	{
 		sInstance->Render();
 	}
+	glutSwapBuffers();
 }
 
 /*static*/
@@ -68,14 +72,17 @@ Application::Application( Params params )
 	: mParams( params )
 	, mWindowWidth( DEFAULT_WIDTH )
 	, mWindowHeight( DEFAULT_HEIGHT )
+	, mRenderer( std::make_unique<Renderer>() )
 {
 }
 
-void
+bool
 Application::Initialize()
 {
 	// 初始化glut
 	glutInit( &mParams.argc, mParams.argv);
+	glutInitContextVersion( 3, 3 ); // 至少是OpenGL 3.3
+	glutInitContextProfile( GLUT_CORE_PROFILE );
 	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL );
 	glutInitWindowSize( DEFAULT_WIDTH, DEFAULT_HEIGHT );
 	glutCreateWindow( "Shitty portal" );
@@ -83,7 +90,12 @@ Application::Initialize()
 	ResizeViewport( DEFAULT_WIDTH, DEFAULT_HEIGHT );
 
 	// 初始化glew
-	glewInit();
+	auto result = glewInit();
+	if( result != GLEW_OK )
+	{
+		std::cerr << "ERROR: " << glewGetErrorString( result ) << std::endl;
+		return false;
+	}
 
 	// 注册glut回调
 	glutDisplayFunc( GLUTRenderCallback );
@@ -92,6 +104,17 @@ Application::Initialize()
 	glutTimerFunc( UPDATE_TIME, GLUTUpdateCallback, not_used_value );
 	// 设置窗口中心点
 	glutWarpPointer( mWindowWidth/2, mWindowHeight/2 );
+
+	// 加载资源
+	mRenderer->Initialize();
+	mTriangle = std::make_unique<Renderer::Renderable>( 
+		std::vector<Renderer::Vertex>{
+			{ -0.5f, -0.5f, 0.0f },
+			{ 0.5f, -0.5f, 0.0f },
+			{ 0.0f,  0.5f, 0.0f }
+		} );
+
+	return true;
 }
 
 void
@@ -106,10 +129,19 @@ Application::Update()
 
 void
 Application::Render()
-{}
+{
+	//glClear( GL_DEPTH_BUFFER_BIT );
+	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	mRenderer->Render( *mTriangle.get() );
+}
 
 void 
 Application::ResizeViewport(int width, int height)
 {
-
+	// 重新设置viewport
+	glViewport( 0, 0, (GLsizei)width, (GLsizei)height );
+	mWindowWidth = width;
+	mWindowHeight = height;
 }

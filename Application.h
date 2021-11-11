@@ -2,6 +2,7 @@
 #define _APPLICATION_H
 
 #include <memory>
+#include "Renderer.h"
 
 namespace portal
 {
@@ -33,7 +34,7 @@ namespace portal
 
 		static void GLUTRenderCallback();
 		static void GLUTResizeCallback( int width, int height );
-		static void GLUTUpdateCallback(int value);
+		static void GLUTUpdateCallback( int value );
 
 	public:
 		///
@@ -44,7 +45,7 @@ namespace portal
 		/// 
 		/// 初始化所有东西
 		/// 
-		void Initialize();
+		bool Initialize();
 
 		///
 		/// 进入主循环
@@ -79,6 +80,8 @@ namespace portal
 		Params mParams;
 		int mWindowWidth;
 		int mWindowHeight;
+		std::unique_ptr<Renderer> mRenderer;
+		std::unique_ptr<Renderer::Renderable> mTriangle;
 	};
 }
 
