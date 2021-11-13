@@ -148,7 +148,26 @@ namespace portal
 			Resources();
 			~Resources() = default;
 
+			///
+			/// 从文件加载贴图
+			/// 
+			/// @param path
+			///		贴图文件相对路径
+			/// 
+			/// @return bool
+			///		True表示成功
+			/// 
 			bool LoadTexture( const std::string& path );
+
+			///
+			/// 获取已加载的贴图Id
+			/// 
+			/// @param path
+			///		贴图文件的路径
+			/// 
+			/// @param unsigned int
+			///		Texture id
+			/// 
 			unsigned int GetTextureId( const std::string& path );
 
 			///

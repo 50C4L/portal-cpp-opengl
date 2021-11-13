@@ -156,14 +156,16 @@ Application::Initialize()
 	mRenderer->SetCameraAsActive( mMainCamera );
 
 	// 加载资源
+	unsigned int tex_id = 0;
 	if( mRenderer->GetResources().LoadTexture( "resources/white_wall.jpg" ) )
 	{
-		mBox = std::make_unique<SceneBox>( 
-			glm::vec3( 0.f ), 2.f, 2.f, 1.f,
-			Renderer::DEFAULT_SHADER,
-			mRenderer->GetResources().GetTextureId( "resources/white_wall.jpg" )
-		);
+		tex_id = mRenderer->GetResources().GetTextureId( "resources/white_wall.jpg" );
 	}
+	mBox = std::make_unique<SceneBox>( 
+		glm::vec3( 0.f ), 2.f, 2.f, 1.f,
+		Renderer::DEFAULT_SHADER,
+		tex_id
+	);
 
 	return true;
 }
