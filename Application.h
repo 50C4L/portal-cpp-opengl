@@ -32,9 +32,15 @@ namespace portal
 		/// 
 		static Ptr CreateApp( Params params );
 
+		///
+		/// GLUT回调函数，具体看Application.cpp
+		/// 
 		static void GLUTRenderCallback();
 		static void GLUTResizeCallback( int width, int height );
 		static void GLUTUpdateCallback( int value );
+		static void GLUTMouseMoveCallback( int x, int y );
+		static void GLUTKeyboardDownCallback( unsigned char key, int x, int y );
+		static void GLUTKeyboardUpCallback( unsigned char key, int x, int y );
 
 	public:
 		///
@@ -74,6 +80,25 @@ namespace portal
 		/// 
 		void ResizeViewport( int width, int height );
 
+		///
+		/// 鼠标位置改变（移动）
+		/// 
+		/// @param x, y
+		///		鼠标窗口坐标
+		/// 
+		void MouseMoved( int x, int y );
+
+		///
+		/// 键盘按键更新
+		/// 
+		/// @param key
+		///		键位的ASCII
+		/// 
+		/// @param is_down
+		///		是否被按下
+		/// 
+		void KeyChanged( unsigned char key, bool is_down );
+
 	private:
 		static Ptr sInstance;
 
@@ -82,6 +107,10 @@ namespace portal
 		int mWindowHeight;
 		std::unique_ptr<Renderer> mRenderer;
 		std::unique_ptr<Renderer::Renderable> mTriangle;
+		int mMouseX;
+		int mMouseY;
+		std::shared_ptr<Camera> mMainCamera;
+		std::unordered_map<unsigned int, bool> mKeyStatus;
 	};
 }
 

@@ -6,13 +6,15 @@
 #include <GL/glut.h>
 #include <GL/freeglut.h>
 
+#include "Camera.h"
+
 using namespace portal;
 
 namespace
 {
 	// 默认窗口大小
-	constexpr int DEFAULT_WIDTH = 1920;
-	constexpr int DEFAULT_HEIGHT = 1080;
+	constexpr int DEFAULT_WIDTH = 2560;
+	constexpr int DEFAULT_HEIGHT = 1440;
 	constexpr unsigned int UPDATE_TIME = 17; // 游戏逻辑每秒更新60次, 16.66666ms间隔
 }
 
@@ -66,6 +68,40 @@ Application::GLUTUpdateCallback( int /*value*/ )
 	{
 		sInstance->Update();
 	}
+	// Redraw screen
+	glutPostRedisplay();
+	// Schedule new update
+	glutTimerFunc( UPDATE_TIME, GLUTUpdateCallback, 1 );
+}
+
+/*static*/
+void 
+Application::GLUTMouseMoveCallback( int x, int y )
+{
+	if( sInstance ) 
+	{
+		sInstance->MouseMoved( x, y );
+	}
+}
+
+/*static*/
+void 
+Application::GLUTKeyboardUpCallback( unsigned char key, int x, int y )
+{
+	if( sInstance ) 
+	{
+		sInstance->KeyChanged( key, false );
+	}
+}
+
+/*static*/
+void 
+Application::GLUTKeyboardDownCallback( unsigned char key, int x, int y )
+{
+	if( sInstance ) 
+	{
+		sInstance->KeyChanged( key, true );
+	}
 }
 
 Application::Application( Params params )
@@ -73,7 +109,13 @@ Application::Application( Params params )
 	, mWindowWidth( DEFAULT_WIDTH )
 	, mWindowHeight( DEFAULT_HEIGHT )
 	, mRenderer( std::make_unique<Renderer>() )
+	, mMouseX( 0 )
+	, mMouseY( 0 )
 {
+	mKeyStatus.emplace( 'w', false );
+	mKeyStatus.emplace( 'a', false );
+	mKeyStatus.emplace( 's', false );
+	mKeyStatus.emplace( 'd', false );
 }
 
 bool
@@ -83,11 +125,10 @@ Application::Initialize()
 	glutInit( &mParams.argc, mParams.argv);
 	glutInitContextVersion( 3, 3 ); // 至少是OpenGL 3.3
 	glutInitContextProfile( GLUT_CORE_PROFILE );
-	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH | GLUT_STENCIL );
+	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
 	glutInitWindowSize( DEFAULT_WIDTH, DEFAULT_HEIGHT );
 	glutCreateWindow( "Shitty portal" );
 	glutSetCursor( GLUT_CURSOR_NONE );
-	ResizeViewport( DEFAULT_WIDTH, DEFAULT_HEIGHT );
 
 	// 初始化glew
 	auto result = glewInit();
@@ -102,17 +143,63 @@ Application::Initialize()
 	glutReshapeFunc( GLUTResizeCallback );
 	constexpr int not_used_value = 0;
 	glutTimerFunc( UPDATE_TIME, GLUTUpdateCallback, not_used_value );
-	// 设置窗口中心点
+	glutPassiveMotionFunc( GLUTMouseMoveCallback );
+	glutKeyboardFunc( GLUTKeyboardDownCallback );
+	glutKeyboardUpFunc( GLUTKeyboardUpCallback );
+	// 鼠标设在窗口在中心
 	glutWarpPointer( mWindowWidth/2, mWindowHeight/2 );
+
+	mMainCamera = std::make_shared<Camera>( static_cast<float>( mWindowWidth ), static_cast<float>( mWindowHeight ) );
 
 	// 加载资源
 	mRenderer->Initialize();
+	mRenderer->SetCameraAsActive( mMainCamera );
 	mTriangle = std::make_unique<Renderer::Renderable>( 
-		std::vector<Renderer::Vertex>{
-			{ -0.5f, -0.5f, 0.0f },
-			{ 0.5f, -0.5f, 0.0f },
-			{ 0.0f,  0.5f, 0.0f }
-		} );
+		std::vector<glm::vec3>{
+			{ -0.5f, -0.5f, -0.5f  },
+			{  0.5f, -0.5f, -0.5f  },
+			{  0.5f,  0.5f, -0.5f  },
+			{  0.5f,  0.5f, -0.5f  },
+			{ -0.5f,  0.5f, -0.5f  },
+			{ -0.5f, -0.5f, -0.5f  },
+
+			{ -0.5f, -0.5f,  0.5f  },
+			{  0.5f, -0.5f,  0.5f  },
+			{  0.5f,  0.5f,  0.5f  },
+			{  0.5f,  0.5f,  0.5f  },
+			{ -0.5f,  0.5f,  0.5f  },
+			{ -0.5f, -0.5f,  0.5f  },
+
+			{ -0.5f,  0.5f,  0.5f  },
+			{ -0.5f,  0.5f, -0.5f  },
+			{ -0.5f, -0.5f, -0.5f  },
+			{ -0.5f, -0.5f, -0.5f  },
+			{ -0.5f, -0.5f,  0.5f  },
+			{ -0.5f,  0.5f,  0.5f  },
+
+			{ 0.5f,  0.5f,  0.5f  },
+			{ 0.5f,  0.5f, -0.5f  },
+			{ 0.5f, -0.5f, -0.5f  },
+			{ 0.5f, -0.5f, -0.5f  },
+			{ 0.5f, -0.5f,  0.5f  },
+			{ 0.5f,  0.5f,  0.5f  },
+
+			{ -0.5f, -0.5f, -0.5f },
+			{  0.5f, -0.5f, -0.5f },
+			{  0.5f, -0.5f,  0.5f },
+			{  0.5f, -0.5f,  0.5f },
+			{ -0.5f, -0.5f,  0.5f },
+			{ -0.5f, -0.5f, -0.5f },
+
+			{ -0.5f,  0.5f, -0.5f },
+			{  0.5f,  0.5f, -0.5f },
+			{  0.5f,  0.5f,  0.5f },
+			{  0.5f,  0.5f,  0.5f },
+			{ -0.5f,  0.5f,  0.5f },
+			{ -0.5f,  0.5f, -0.5f },
+		},
+		Renderer::DEFAULT_SHADER
+	);
 
 	return true;
 }
@@ -125,15 +212,29 @@ Application::Run()
 
 void
 Application::Update()
-{}
+{
+	if( mKeyStatus[ 'w' ] )
+	{
+		mMainCamera->Move( Camera::MovementDirection::FORWARD );
+	}
+	if( mKeyStatus[ 's' ] )
+	{
+		mMainCamera->Move( Camera::MovementDirection::BACKWARD );
+	}
+	if( mKeyStatus[ 'a' ] )
+	{
+		mMainCamera->Move( Camera::MovementDirection::LEFT );
+	}
+	if( mKeyStatus[ 'd' ] )
+	{
+		mMainCamera->Move( Camera::MovementDirection::RIGHT );
+	}
+	mMainCamera->Update( UPDATE_TIME );
+}
 
 void
 Application::Render()
 {
-	//glClear( GL_DEPTH_BUFFER_BIT );
-	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
 	mRenderer->Render( *mTriangle.get() );
 }
 
@@ -144,4 +245,24 @@ Application::ResizeViewport(int width, int height)
 	glViewport( 0, 0, (GLsizei)width, (GLsizei)height );
 	mWindowWidth = width;
 	mWindowHeight = height;
+}
+
+void 
+Application::MouseMoved( int x, int y )
+{
+	float x_offset = static_cast<float>( x - mMouseX );
+	float y_offset = static_cast<float>( mMouseY - y );
+	mMouseX = x;
+	mMouseY = y;
+
+	const float sensitivitiy = 0.3f;
+	x_offset *= sensitivitiy;
+	y_offset *= sensitivitiy;
+	mMainCamera->Look( x_offset, y_offset );
+}
+
+void 
+Application::KeyChanged( unsigned char key, bool is_down )
+{
+	mKeyStatus[ key ] = is_down;
 }
