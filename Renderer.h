@@ -13,8 +13,15 @@ namespace portal
 {
 	class Camera;
 
+	struct Vertex
+	{
+		glm::vec3 pos;
+		glm::vec2 uv;
+	};
+
 	///
 	/// 简易（简陋）渲染器
+	/// 只能在获取OpenGL Context后使用
 	/// 
 	class Renderer
 	{
@@ -42,7 +49,7 @@ namespace portal
 			///		片源shader文本
 			/// 
 			Shader( const std::string& vertex_shader, const std::string& fragment_shader );
-			~Shader() = default;
+			~Shader();
 
 			///
 			/// 检查Shader是否编译成功
@@ -101,7 +108,7 @@ namespace portal
 		class Renderable
 		{
 		public:
-			Renderable( std::vector<glm::vec3>&& vertices, std::string shader_name );
+			Renderable( std::vector<Vertex>&& vertices, std::string shader_name, unsigned int texture_id );
 			~Renderable();
 
 			///
@@ -120,47 +127,70 @@ namespace portal
 			/// 
 			int GetNumberOfVertices() const;
 
-			///
-			/// 获取需要的Shader名字
-			/// 
-			/// @return std::string
-			///		Shader名字
-			/// 
 			std::string GetShaderName() const;
+			unsigned int GetTexture() const;
 
 		private:
 			unsigned int mVBO;
 			unsigned int mVAO;
 			int mNumberOfVertices;
 			std::string mShader;
+			unsigned int mTexture;
 		};
 
+		///
+		/// 简陋渲染资源管理器
+		/// 负责加载贴图，shader
+		/// 
+		class Resources
+		{
+		public:
+			Resources();
+			~Resources() = default;
+
+			bool LoadTexture( const std::string& path );
+			unsigned int GetTextureId( const std::string& path );
+
+			///
+			/// 编译Shader，成功编译后Shader的program id会存放在mCompiledShaders里。
+			/// Key是提供的名字
+			/// 
+			/// @param name
+			///		存放在map中对应的名字
+			/// 
+			/// @param vertex_shader
+			///		顶点shader
+			/// 
+			/// @param fragment_shader
+			///		片源shader
+			/// 
+			/// @return
+			///		true成功编译，false失败
+			/// 
+			bool CompileShader( const std::string& name, std::string vertex_shader, std::string fragment_shader );
+
+			///
+			/// 根据名字查找并返回已编译的shader
+			/// 
+			/// @param name
+			///		THE NAME
+			/// 
+			/// @return unsigned int
+			///		Reference to Shader
+			/// 
+			Shader& GetShader( const std::string& name );
+
+		private:
+			std::unordered_map<std::string, unsigned int> mLoadedTextures;
+			std::unordered_map<std::string, Shader> mCompiledShaders;
+		};
+
+public:
+		/// Renderer class
 		Renderer();
 		~Renderer();
 
-		///
-		/// 初始化
-		/// 编译默认shader
-		/// 
-		bool Initialize();
-
-		///
-		/// 编译Shader，成功编译后Shader的program id会存放在mCompiledShaders里。
-		/// Key是提供的名字
-		/// 
-		/// @param name
-		///		存放在map中对应的名字
-		/// 
-		/// @param vertex_shader
-		///		顶点shader
-		/// 
-		/// @param fragment_shader
-		///		片源shader
-		/// 
-		/// @return
-		///		true成功编译，false失败
-		/// 
-		bool CompileShader( const std::string& name, std::string vertex_shader, std::string fragment_shader );
+		
 
 		///
 		/// 渲染提供的Renderable obj
@@ -178,12 +208,15 @@ namespace portal
 		/// 
 		void SetCameraAsActive( std::shared_ptr<Camera> camera );
 
+		Resources& GetResources();
+
 	private:
-		std::unordered_map<std::string, Shader> mCompiledShaders;
 		std::shared_ptr<Camera> mActiveCamera;
 		glm::mat4 mProjectionMatrix;
 
 		std::chrono::steady_clock::time_point mLastRenderTimepoint;
+
+		std::unique_ptr<Resources> mResources;
 	};
 }
 

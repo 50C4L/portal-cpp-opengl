@@ -7,6 +7,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 #include "Camera.h"
 
 using namespace portal;
@@ -19,6 +22,9 @@ namespace
 	const std::string DEFAULT_VERTEX_SHADER = R"~~~(
 		#version 330 core
 		layout (location = 0) in vec3 in_pos;
+		layout (location = 1) in vec2 in_uv;
+
+		out vec2 tex_coord;
 
 		uniform mat4 view_mat;
 		uniform mat4 projection_mat;
@@ -27,20 +33,27 @@ namespace
 		{
 			mat4 model_mat = mat4( 1.0 );
 			gl_Position = projection_mat * view_mat * model_mat * vec4( in_pos, 1.0 );
+			tex_coord = in_uv;
 		}
 	)~~~";
 
 	const std::string DEFAULT_FRAGMENT_SHADER = R"~~~(
 		#version 330 core
 		out vec4 frag_color;
+
+		in vec2 tex_coord;
+
+		// texture
+		uniform sampler2D color_texture;
 		
 		void main()
 		{
-			frag_color = vec4( 1.0f, 0.5f, 0.2f, 1.0f );
+			frag_color = texture( color_texture, tex_coord );
 		} 
 	)~~~";
 
 	constexpr GLuint POSITION_INDEX = 0;
+	constexpr GLuint UV_INDEX = 1;
 }
 
 const std::string Renderer::DEFAULT_SHADER = "DEFLAULT_SHADER";
@@ -112,6 +125,11 @@ Renderer::Shader::Shader( const std::string& vertex_shader, const std::string& f
 	glDeleteShader( fs_id );
 }
 
+Renderer::Shader::~Shader()
+{
+	glDeleteShader( mId );
+}
+
 bool
 Renderer::Shader::IsValid() const
 {
@@ -147,11 +165,12 @@ Renderer::Shader::SetMat4( int location, const glm::mat4& matrix )
 ///
 /// Renderable implementaitons
 /// 
-Renderer::Renderable::Renderable( std::vector<glm::vec3>&& vertices, std::string shader_name )
+Renderer::Renderable::Renderable( std::vector<Vertex>&& vertices, std::string shader_name, unsigned int texture_id )
 	: mVBO( 0 )
 	, mVAO( 0 )
 	, mNumberOfVertices( static_cast<int>( vertices.size() ) )
 	, mShader( shader_name )
+	, mTexture( texture_id )
 {
 	glGenVertexArrays( 1, &mVAO );
 	glGenBuffers( 1, &mVBO ); 
@@ -159,14 +178,19 @@ Renderer::Renderable::Renderable( std::vector<glm::vec3>&& vertices, std::string
 	glBindVertexArray( mVAO );
 	glBindBuffer( GL_ARRAY_BUFFER, mVBO );
 	// 申请显存空间来放顶点数据
-	glBufferData( GL_ARRAY_BUFFER, mNumberOfVertices * sizeof( glm::vec3 ), &vertices.front(), GL_STATIC_DRAW );
+	glBufferData( GL_ARRAY_BUFFER, mNumberOfVertices * sizeof( Vertex ), &vertices.front(), GL_STATIC_DRAW );
 	// 绑定顶点位置数据到 POSITION_INDEX
-	glVertexAttribPointer( POSITION_INDEX, 3, GL_FLOAT, GL_FALSE, sizeof( glm::vec3 ), (void*)0);
+	glVertexAttribPointer( POSITION_INDEX, 3, GL_FLOAT, GL_FALSE, sizeof( Vertex ), (void*)0 );
 	glEnableVertexAttribArray( POSITION_INDEX );
+	// 绑定顶点UV数据到 UV_INDEX
+	glVertexAttribPointer( UV_INDEX, 2, GL_FLOAT, GL_FALSE, sizeof( Vertex ), (void*)( sizeof( glm::vec3 ) ) );
+	glEnableVertexAttribArray( UV_INDEX );
 }
 
 Renderer::Renderable::~Renderable()
 {
+	glDeleteBuffers( 1, &mVBO );
+	glDeleteVertexArrays( 1, &mVAO );
 }
 
 unsigned int
@@ -181,12 +205,95 @@ Renderer::Renderable::GetNumberOfVertices() const
 	return mNumberOfVertices;
 }
 
-std::string 
+std::string
 Renderer::Renderable::GetShaderName() const
 {
 	return mShader;
 }
 
+unsigned int
+Renderer::Renderable::GetTexture() const
+{
+	return mTexture;
+}
+
+///
+/// Resources implementations
+/// 
+Renderer::Resources::Resources()
+{
+}
+
+bool 
+Renderer::Resources::LoadTexture( const std::string& path )
+{
+	bool success = false;
+	int width, height, num_channels;
+	unsigned char* data = stbi_load( path.c_str(), &width, &height, &num_channels, 0 );
+	if( data )
+	{
+		unsigned int texture_id;
+		glGenTextures( 1, &texture_id );
+		glBindTexture( GL_TEXTURE_2D, texture_id );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );	
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data );
+		glGenerateMipmap( GL_TEXTURE_2D );
+
+		mLoadedTextures.emplace( path, texture_id );
+		success = true;
+	}
+	else
+	{
+		std::cerr << "ERROR: Failed to load texture file " << path << std::endl;
+	}
+	stbi_image_free( data );
+	return success;
+}
+
+unsigned int 
+Renderer::Resources::GetTextureId( const std::string& path )
+{
+	auto itr = mLoadedTextures.find( path );
+	if( itr != mLoadedTextures.end() )
+	{
+		return itr->second;
+	}
+	else
+	{
+		std::cerr << "ERROR: Cannot find the required texture " << path << std::endl;
+		return 0; // TODO: return a default texture
+	}
+}
+
+bool 
+Renderer::Resources::CompileShader( const std::string& name, std::string vertex_shader, std::string fragment_shader )
+{
+	Shader shader{ std::move( vertex_shader ), std::move( fragment_shader ) };
+	if( shader.IsValid() )
+	{
+		mCompiledShaders.emplace( name, std::move( shader ) );
+		return true;
+	}
+	return false;
+}
+
+Renderer::Shader&
+Renderer::Resources::GetShader( const std::string& name )
+{
+	auto itr = mCompiledShaders.find( name );
+	if( itr != mCompiledShaders.end() )
+	{
+		return itr->second;
+	}
+	// 需求的shader不存在，改用默认shader
+	else
+	{
+		return mCompiledShaders[ DEFAULT_SHADER ];
+	}
+}
 
 ///
 /// Renderer implementations
@@ -196,29 +303,20 @@ Renderer::Renderer()
 	, mProjectionMatrix( glm::mat4( 1.f ) )
 	, mLastRenderTimepoint( std::chrono::steady_clock::now() )
 {
+	mResources = std::make_unique<Resources>();
+
+	glEnable( GL_DEPTH_TEST );
+	glEnable( GL_CULL_FACE );
+	glCullFace( GL_BACK );
+	glFrontFace( GL_CW );
+	if( !mResources->CompileShader( DEFAULT_SHADER, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER ) )
+	{
+		std::cerr << "ERROR: Failed to compile default shaders." << std::endl;
+	}
 }
 
 Renderer::~Renderer()
 {
-}
-
-bool
-Renderer::Initialize()
-{
-	glEnable( GL_DEPTH_TEST );
-	return CompileShader( DEFAULT_SHADER, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER );
-}
-
-bool 
-Renderer::CompileShader( const std::string& name, std::string vertex_shader, std::string fragment_shader )
-{
-	Shader shader{ std::move( vertex_shader ), std::move( fragment_shader ) };
-	if( shader.IsValid() )
-	{
-		mCompiledShaders.emplace( name, std::move( shader ) );
-		return true;
-	}
-	return false;
 }
 
 void 
@@ -231,7 +329,8 @@ Renderer::Render( Renderable& renderable_obj )
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-	auto shader = mCompiledShaders[ renderable_obj.GetShaderName() ];
+	glBindTexture( GL_TEXTURE_2D, renderable_obj.GetTexture() );
+	auto shader = mResources->GetShader( renderable_obj.GetShaderName() );
 	glUseProgram( shader.GetId() );
 	if( mActiveCamera )
 	{
@@ -248,4 +347,10 @@ Renderer::SetCameraAsActive( std::shared_ptr<Camera> camera )
 {
 	mActiveCamera = camera;
 	mProjectionMatrix = mActiveCamera->GetProjectionMatrix();
+}
+
+Renderer::Resources&
+Renderer::GetResources()
+{
+	return *mResources.get();
 }

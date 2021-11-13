@@ -6,6 +6,8 @@
 
 namespace portal
 {
+	class SceneBox;
+
 	class Application
 	{
 	public:
@@ -106,7 +108,7 @@ namespace portal
 		int mWindowWidth;
 		int mWindowHeight;
 		std::unique_ptr<Renderer> mRenderer;
-		std::unique_ptr<Renderer::Renderable> mTriangle;
+		std::unique_ptr<SceneBox> mBox;
 		int mMouseX;
 		int mMouseY;
 		std::shared_ptr<Camera> mMainCamera;

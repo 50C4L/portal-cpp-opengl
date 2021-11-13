@@ -7,6 +7,7 @@
 #include <GL/freeglut.h>
 
 #include "Camera.h"
+#include "ScenePrimitives.h"
 
 using namespace portal;
 
@@ -108,7 +109,6 @@ Application::Application( Params params )
 	: mParams( params )
 	, mWindowWidth( DEFAULT_WIDTH )
 	, mWindowHeight( DEFAULT_HEIGHT )
-	, mRenderer( std::make_unique<Renderer>() )
 	, mMouseX( 0 )
 	, mMouseY( 0 )
 {
@@ -143,63 +143,27 @@ Application::Initialize()
 	glutReshapeFunc( GLUTResizeCallback );
 	constexpr int not_used_value = 0;
 	glutTimerFunc( UPDATE_TIME, GLUTUpdateCallback, not_used_value );
-	glutPassiveMotionFunc( GLUTMouseMoveCallback );
 	glutKeyboardFunc( GLUTKeyboardDownCallback );
 	glutKeyboardUpFunc( GLUTKeyboardUpCallback );
 	// 鼠标设在窗口在中心
 	glutWarpPointer( mWindowWidth/2, mWindowHeight/2 );
+	glutPassiveMotionFunc( GLUTMouseMoveCallback );
 
 	mMainCamera = std::make_shared<Camera>( static_cast<float>( mWindowWidth ), static_cast<float>( mWindowHeight ) );
 
-	// 加载资源
-	mRenderer->Initialize();
+	// 初始化渲染器
+	mRenderer = std::make_unique<Renderer>();
 	mRenderer->SetCameraAsActive( mMainCamera );
-	mTriangle = std::make_unique<Renderer::Renderable>( 
-		std::vector<glm::vec3>{
-			{ -0.5f, -0.5f, -0.5f  },
-			{  0.5f, -0.5f, -0.5f  },
-			{  0.5f,  0.5f, -0.5f  },
-			{  0.5f,  0.5f, -0.5f  },
-			{ -0.5f,  0.5f, -0.5f  },
-			{ -0.5f, -0.5f, -0.5f  },
 
-			{ -0.5f, -0.5f,  0.5f  },
-			{  0.5f, -0.5f,  0.5f  },
-			{  0.5f,  0.5f,  0.5f  },
-			{  0.5f,  0.5f,  0.5f  },
-			{ -0.5f,  0.5f,  0.5f  },
-			{ -0.5f, -0.5f,  0.5f  },
-
-			{ -0.5f,  0.5f,  0.5f  },
-			{ -0.5f,  0.5f, -0.5f  },
-			{ -0.5f, -0.5f, -0.5f  },
-			{ -0.5f, -0.5f, -0.5f  },
-			{ -0.5f, -0.5f,  0.5f  },
-			{ -0.5f,  0.5f,  0.5f  },
-
-			{ 0.5f,  0.5f,  0.5f  },
-			{ 0.5f,  0.5f, -0.5f  },
-			{ 0.5f, -0.5f, -0.5f  },
-			{ 0.5f, -0.5f, -0.5f  },
-			{ 0.5f, -0.5f,  0.5f  },
-			{ 0.5f,  0.5f,  0.5f  },
-
-			{ -0.5f, -0.5f, -0.5f },
-			{  0.5f, -0.5f, -0.5f },
-			{  0.5f, -0.5f,  0.5f },
-			{  0.5f, -0.5f,  0.5f },
-			{ -0.5f, -0.5f,  0.5f },
-			{ -0.5f, -0.5f, -0.5f },
-
-			{ -0.5f,  0.5f, -0.5f },
-			{  0.5f,  0.5f, -0.5f },
-			{  0.5f,  0.5f,  0.5f },
-			{  0.5f,  0.5f,  0.5f },
-			{ -0.5f,  0.5f,  0.5f },
-			{ -0.5f,  0.5f, -0.5f },
-		},
-		Renderer::DEFAULT_SHADER
-	);
+	// 加载资源
+	if( mRenderer->GetResources().LoadTexture( "resources/white_wall.jpg" ) )
+	{
+		mBox = std::make_unique<SceneBox>( 
+			glm::vec3( 0.f ), 2.f, 2.f, 1.f,
+			Renderer::DEFAULT_SHADER,
+			mRenderer->GetResources().GetTextureId( "resources/white_wall.jpg" )
+		);
+	}
 
 	return true;
 }
@@ -235,7 +199,7 @@ Application::Update()
 void
 Application::Render()
 {
-	mRenderer->Render( *mTriangle.get() );
+	mRenderer->Render( *mBox.get() );
 }
 
 void 
