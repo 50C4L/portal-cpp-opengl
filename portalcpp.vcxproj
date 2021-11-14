@@ -144,6 +144,7 @@
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="LevelController.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="ScenePrimitives.cpp" />
@@ -151,6 +152,7 @@
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="LevelController.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="ScenePrimitives.h" />
   </ItemGroup>

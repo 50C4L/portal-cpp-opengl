@@ -1,0 +1,43 @@
+{
+  "Spawn": {
+    "x": 0.0,
+    "y": 15.0,
+    "z": 0.0
+  },
+  "Walls": {
+    "texture": "resources/white_wall.jpg",
+    "shader": "DEFLAULT_SHADER",
+    "build": {
+      "floor": {
+        "pos": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "width": 50.0,
+        "height": 10.0,
+        "depth": 50.0
+      },
+      "wall_0": {
+        "pos": {
+          "x": 30.0,
+          "y": 10.0,
+          "z": 0.0
+        },
+        "width": 10.0,
+        "height": 20.0,
+        "depth": 50.0
+      },
+      "wall_1": {
+        "pos": {
+          "x": -30.0,
+          "y": 10.0,
+          "z": 0.0
+        },
+        "width": 10.0,
+        "height": 20.0,
+        "depth": 50.0
+      }
+    }
+  }
+}

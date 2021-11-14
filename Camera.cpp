@@ -6,7 +6,7 @@
 using namespace portal;
 
 Camera::Camera( float view_width, float view_height )
-	: mPosition( 0.f, 1.f, 1.f )
+	: mPosition( 0.f, 10.f, 1.f )
 	, mCameraFrontDirection( 0.f, 0.f, -1.f )
 	, mCameraUpDirection( 0.f, 1.f, 0.f )
 	, mCameraRightDirection( glm::normalize( glm::cross( mCameraFrontDirection, mCameraUpDirection ) ) )

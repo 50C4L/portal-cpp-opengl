@@ -4,7 +4,6 @@
 #include <unordered_map>
 #include <vector>
 #include <memory>
-#include <chrono>
 
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
@@ -209,15 +208,18 @@ public:
 		Renderer();
 		~Renderer();
 
-		
-
 		///
-		/// 渲染提供的Renderable obj
+		/// 将提供的Renderable引用加入到渲染队列
 		/// 
 		/// @param renderable_obj
-		///		Renderable引用
+		///		Reference to Renderable
+		///
+		void AddToRenderQueue( Renderable* renderable_obj );
+
+		///
+		/// 渲染!!!
 		/// 
-		void Render( Renderable& renderable_obj );
+		void Render();
 
 		///
 		/// 将提供的摄像机作为之后渲染的摄像机
@@ -233,9 +235,8 @@ public:
 		std::shared_ptr<Camera> mActiveCamera;
 		glm::mat4 mProjectionMatrix;
 
-		std::chrono::steady_clock::time_point mLastRenderTimepoint;
-
 		std::unique_ptr<Resources> mResources;
+		std::list<Renderable*> mRenderableList;
 	};
 }
 

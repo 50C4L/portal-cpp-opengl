@@ -301,7 +301,6 @@ Renderer::Resources::GetShader( const std::string& name )
 Renderer::Renderer()
 	: mActiveCamera( nullptr )
 	, mProjectionMatrix( glm::mat4( 1.f ) )
-	, mLastRenderTimepoint( std::chrono::steady_clock::now() )
 {
 	mResources = std::make_unique<Resources>();
 
@@ -320,26 +319,38 @@ Renderer::~Renderer()
 }
 
 void 
-Renderer::Render( Renderable& renderable_obj )
+Renderer::AddToRenderQueue( Renderable* renderable_obj )
 {
-	// 计算一帧用了多少毫秒
-	int ms_since_last_call = static_cast<int>( std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::steady_clock::now() - mLastRenderTimepoint ).count() );
-	mLastRenderTimepoint = std::chrono::steady_clock::now();
+	if( renderable_obj )
+	{
+		mRenderableList.emplace_back( std::move( renderable_obj ) );
+	}
+}
 
+void 
+Renderer::Render()
+{
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-	glBindTexture( GL_TEXTURE_2D, renderable_obj.GetTexture() );
-	auto shader = mResources->GetShader( renderable_obj.GetShaderName() );
-	glUseProgram( shader.GetId() );
-	if( mActiveCamera )
+	for( auto& renderable : mRenderableList )
 	{
-		// 传递当前摄像机的视图投影矩阵到当前Shader
-		shader.SetViewMatrix( mActiveCamera->GetViewMatrix() );
-		shader.SetProjectionMatrix( mProjectionMatrix );
+		if( !renderable )
+		{
+			continue;
+		}
+		glBindTexture( GL_TEXTURE_2D, renderable->GetTexture() );
+		auto shader = mResources->GetShader( renderable->GetShaderName() );
+		glUseProgram( shader.GetId() );
+		if( mActiveCamera )
+		{
+			// 传递当前摄像机的视图投影矩阵到当前Shader
+			shader.SetViewMatrix( mActiveCamera->GetViewMatrix() );
+			shader.SetProjectionMatrix( mProjectionMatrix );
+		}
+		glBindVertexArray( renderable->GetVAO() );
+		glDrawArrays( GL_TRIANGLES, 0, renderable->GetNumberOfVertices() );
 	}
-	glBindVertexArray( renderable_obj.GetVAO() );
-	glDrawArrays( GL_TRIANGLES, 0, renderable_obj.GetNumberOfVertices() );
 }
 
 void 

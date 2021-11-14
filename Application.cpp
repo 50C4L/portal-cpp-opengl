@@ -8,6 +8,7 @@
 
 #include "Camera.h"
 #include "ScenePrimitives.h"
+#include "LevelController.h"
 
 using namespace portal;
 
@@ -156,16 +157,12 @@ Application::Initialize()
 	mRenderer->SetCameraAsActive( mMainCamera );
 
 	// 加载资源
-	unsigned int tex_id = 0;
-	if( mRenderer->GetResources().LoadTexture( "resources/white_wall.jpg" ) )
+	mRenderer->GetResources().LoadTexture( "resources/white_wall.jpg" );
+	mLevelController = std::make_unique<LevelController>( *mRenderer );
+	if( mLevelController->LoadLevelFile( "resources/levels/level_intro.json" ) )
 	{
-		tex_id = mRenderer->GetResources().GetTextureId( "resources/white_wall.jpg" );
+		mLevelController->ChangeLevelTo( "resources/levels/level_intro.json" );
 	}
-	mBox = std::make_unique<SceneBox>( 
-		glm::vec3( 0.f ), 2.f, 2.f, 1.f,
-		Renderer::DEFAULT_SHADER,
-		tex_id
-	);
 
 	return true;
 }
@@ -196,12 +193,13 @@ Application::Update()
 		mMainCamera->Move( Camera::MovementDirection::RIGHT );
 	}
 	mMainCamera->Update( UPDATE_TIME );
+	mLevelController->Update();
 }
 
 void
 Application::Render()
 {
-	mRenderer->Render( *mBox.get() );
+	mRenderer->Render();
 }
 
 void 

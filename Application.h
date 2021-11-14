@@ -6,7 +6,7 @@
 
 namespace portal
 {
-	class SceneBox;
+	class LevelController;
 
 	class Application
 	{
@@ -108,7 +108,7 @@ namespace portal
 		int mWindowWidth;
 		int mWindowHeight;
 		std::unique_ptr<Renderer> mRenderer;
-		std::unique_ptr<SceneBox> mBox;
+		std::unique_ptr<LevelController> mLevelController;
 		int mMouseX;
 		int mMouseY;
 		std::shared_ptr<Camera> mMainCamera;
