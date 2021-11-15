@@ -10,6 +10,7 @@ namespace portal
 {
 	class SceneBox;
 	class Renderer;
+	class Physics;
 
 	class LevelController
 	{
@@ -49,7 +50,9 @@ namespace portal
 		};
 
 		LevelController( Renderer& renderer );
-		~LevelController() = default;
+		~LevelController();
+
+		void Initialize( int update_interval_ms );
 
 		bool LoadLevelFile( const std::string& path );
 		void ChangeLevelTo( const std::string& path );
@@ -59,6 +62,7 @@ namespace portal
 	private:
 		std::unordered_map<std::string, std::unique_ptr<Level>> mLevels;
 		Renderer& mRenderer;
+		std::unique_ptr<Physics> mPhysics;
 	};
 }
 

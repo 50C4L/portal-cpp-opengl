@@ -159,6 +159,7 @@ Application::Initialize()
 	// 加载资源
 	mRenderer->GetResources().LoadTexture( "resources/white_wall.jpg" );
 	mLevelController = std::make_unique<LevelController>( *mRenderer );
+	mLevelController->Initialize( UPDATE_TIME );
 	if( mLevelController->LoadLevelFile( "resources/levels/level_intro.json" ) )
 	{
 		mLevelController->ChangeLevelTo( "resources/levels/level_intro.json" );

@@ -8,6 +8,7 @@
 
 #include "ScenePrimitives.h"
 #include "Renderer.h"
+#include "Physics.h"
 
 using namespace portal;
 
@@ -49,6 +50,17 @@ LevelController::Level::GetSpawn() const
 LevelController::LevelController( Renderer& renderer )
 	: mRenderer( renderer )
 {
+}
+
+LevelController::~LevelController()
+{
+}
+
+void
+LevelController::Initialize( int update_interval_ms )
+{
+	mPhysics = std::make_unique<Physics>();
+	mPhysics->Initialize( update_interval_ms / 1000.f );
 }
 
 bool 
@@ -148,7 +160,6 @@ LevelController::ChangeLevelTo( const std::string& path )
 
 	// 改变玩家出生点
 
-
 	// 把关卡加入到渲染队列
 	auto& walls = itr->second->GetWalls();
 	for( auto& wall : walls )
@@ -168,4 +179,8 @@ LevelController::ChangeLevelTo( const std::string& path )
 void
 LevelController::Update()
 {
+	if( mPhysics )
+	{
+		mPhysics->Update();
+	}
 }
