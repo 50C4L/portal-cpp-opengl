@@ -5,9 +5,10 @@
 
 using namespace portal;
 
-Camera::Camera( float view_width, float view_height )
+Camera::Camera( float view_width, float view_height, Type type )
 	: mPosition( 0.f, 10.f, 1.f )
 	, mCameraFrontDirection( 0.f, 0.f, -1.f )
+	, mCameraLookDirection( 0.f, 0.f, -1.f )
 	, mCameraUpDirection( 0.f, 1.f, 0.f )
 	, mCameraRightDirection( glm::normalize( glm::cross( mCameraFrontDirection, mCameraUpDirection ) ) )
 	, mAspectRatio( view_width / view_height )
@@ -18,6 +19,7 @@ Camera::Camera( float view_width, float view_height )
 	, mPositionDeltaPerSecond( 0.f )
 	, mYawAngle( 0.f )
 	, mPitchAngle( 0.f )
+	, mType( type )
 {
 }
 
@@ -29,7 +31,7 @@ Camera::GetViewMatrix()
 {
 	return glm::lookAt( 
 		mPosition,
-		mPosition + mCameraFrontDirection,
+		mPosition + mCameraLookDirection,
 		mCameraUpDirection
 	);
 }
@@ -102,9 +104,19 @@ Camera::Look( float yaw_angle, float pitch_angle )
 	}
 
 	// 画个图将摄像机三维分解为多个二维图，通过三角函数就能算出镜头转动后的方向
-	glm::vec3 front;
-	front.x = cos( glm::radians( mYawAngle ) ) * cos( glm::radians( mPitchAngle ) );
-	front.y = sin( glm::radians( mPitchAngle ) );
-	front.z = sin( glm::radians( mYawAngle ) ) * cos( glm::radians( mPitchAngle ) );
-	mCameraFrontDirection = glm::normalize( front );
+	glm::vec3 look;
+	look.x = cos( glm::radians( mYawAngle ) ) * cos( glm::radians( mPitchAngle ) );
+	look.y = sin( glm::radians( mPitchAngle ) );
+	look.z = sin( glm::radians( mYawAngle ) ) * cos( glm::radians( mPitchAngle ) );
+	mCameraLookDirection = glm::normalize( look );
+
+	if( mType == Type::FPS )
+	{
+		mCameraFrontDirection.x = look.x;
+		mCameraFrontDirection.z = look.z;
+	}
+	else
+	{
+		mCameraFrontDirection = look;
+	}
 }

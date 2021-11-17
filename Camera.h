@@ -13,6 +13,12 @@ namespace portal
 	class Camera
 	{
 	public:
+		enum class Type
+		{
+			FPS,
+			FREE
+		};
+
 		///
 		/// 摄像机运动方向
 		/// 
@@ -26,7 +32,7 @@ namespace portal
 			BACKWARD
 		};
 
-		Camera( float view_width, float view_height );
+		Camera( float view_width, float view_height, Type type );
 		~Camera();
 
 		///
@@ -74,7 +80,8 @@ namespace portal
 
 	private:
 		glm::vec3 mPosition;             ///< 摄像机位置
-		glm::vec3 mCameraFrontDirection; ///< 摄像机面朝方向
+		glm::vec3 mCameraFrontDirection; ///< 摄像机向前方向 - FPS模式下Y轴不变
+		glm::vec3 mCameraLookDirection;  ///< 摄像机视觉方向
 		glm::vec3 mCameraUpDirection;    ///< 摄像机头顶方向
 		glm::vec3 mCameraRightDirection; ///< 摄像机右方
 
@@ -88,6 +95,8 @@ namespace portal
 		glm::vec3 mPositionDeltaPerSecond; ///< 累积每秒移动变量
 		float mYawAngle;                   ///< 垂直角度
 		float mPitchAngle;                 ///< 水平角度
+
+		Type mType;
 	};
 }
 

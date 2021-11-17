@@ -150,7 +150,7 @@ Application::Initialize()
 	glutWarpPointer( mWindowWidth/2, mWindowHeight/2 );
 	glutPassiveMotionFunc( GLUTMouseMoveCallback );
 
-	mMainCamera = std::make_shared<Camera>( static_cast<float>( mWindowWidth ), static_cast<float>( mWindowHeight ) );
+	mMainCamera = std::make_shared<Camera>( static_cast<float>( mWindowWidth ), static_cast<float>( mWindowHeight ), Camera::Type::FPS );
 
 	// 初始化渲染器
 	mRenderer = std::make_unique<Renderer>();
