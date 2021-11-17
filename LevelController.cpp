@@ -8,7 +8,6 @@
 
 #include "ScenePrimitives.h"
 #include "Renderer.h"
-#include "Physics.h"
 
 using namespace portal;
 
@@ -172,6 +171,7 @@ LevelController::ChangeLevelTo( const std::string& path )
 			wall.shader_name,
 			mRenderer.GetResources().GetTextureId( wall.texture_path )
 		);
+		wall.mCollisionBox = mPhysics->CreateBox( wall.position, { wall.width, wall.height, wall.depth }, true, Physics::PhysicsObject::Type::STATIC );
 		mRenderer.AddToRenderQueue( wall.render_instance.get() );
 	}
 }

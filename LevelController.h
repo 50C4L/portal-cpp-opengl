@@ -6,11 +6,12 @@
 #include <memory>
 #include <glm/vec3.hpp>
 
+#include "Physics.h"
+
 namespace portal
 {
 	class SceneBox;
 	class Renderer;
-	class Physics;
 
 	class LevelController
 	{
@@ -28,6 +29,7 @@ namespace portal
 				std::string shader_name;
 
 				std::unique_ptr<SceneBox> render_instance;
+				std::unique_ptr<Physics::Box> mCollisionBox;
 			};
 
 			Level();
@@ -60,9 +62,9 @@ namespace portal
 		void Update();
 
 	private:
-		std::unordered_map<std::string, std::unique_ptr<Level>> mLevels;
 		Renderer& mRenderer;
 		std::unique_ptr<Physics> mPhysics;
+		std::unordered_map<std::string, std::unique_ptr<Level>> mLevels;
 	};
 }
 

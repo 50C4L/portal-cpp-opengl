@@ -120,7 +120,7 @@ Physics::Update()
 	mPreviousUpdateTimepoint = current_time;
 
 #ifdef _DEBUG
-	std::cout << "Physics::Update() call interval: " << delta_seconds << "s." << std::endl; 
+	// std::cout << "Physics::Update() call interval: " << delta_seconds << "s." << std::endl; 
 #endif
 
 	mTimeAccumulator += delta_seconds;
