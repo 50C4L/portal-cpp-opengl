@@ -158,6 +158,7 @@ LevelController::ChangeLevelTo( const std::string& path )
 	// TODO: Release the previous level
 
 	// 改变玩家出生点
+	mPlayer.Spawn( { 0.f, 20.f, 0.f }, *mPhysics );
 
 	// 把关卡加入到渲染队列
 	auto& walls = itr->second->GetWalls();
@@ -182,5 +183,14 @@ LevelController::Update()
 	if( mPhysics )
 	{
 		mPhysics->Update();
+	}
+}
+
+void
+LevelController::RenderDebugInfo()
+{
+	if( auto debug_obj = mPhysics->GetDebugRenderable() )
+	{
+		mRenderer.RenderOneoff( debug_obj );
 	}
 }

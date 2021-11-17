@@ -6,6 +6,8 @@
 #include <chrono>
 #include <glm/vec3.hpp>
 
+#include "Renderer.h"
+
 namespace reactphysics3d
 {
 	class PhysicsCommon;
@@ -66,6 +68,7 @@ namespace portal
 
 		void Initialize( float dt );
 		void Update();
+		Renderer::Renderable* GetDebugRenderable();
 
 		std::unique_ptr<Box> CreateBox( glm::vec3 pos, glm::vec3 size, bool is_rigid, PhysicsObject::Type type );
 
@@ -78,6 +81,8 @@ namespace portal
 		float mUpdateInterval;
 		std::chrono::steady_clock::time_point mPreviousUpdateTimepoint;
 		float mTimeAccumulator;
+
+		std::unique_ptr<Renderer::Renderable> mDebugRenderable;
 	};
 }
 

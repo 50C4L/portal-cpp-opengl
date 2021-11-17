@@ -201,6 +201,9 @@ void
 Application::Render()
 {
 	mRenderer->Render();
+	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+	mLevelController->RenderDebugInfo();
+	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 }
 
 void 

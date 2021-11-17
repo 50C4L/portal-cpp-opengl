@@ -110,6 +110,12 @@ Physics::Initialize( float dt )
 			mPhysicsCommon->destroyPhysicsWorld( world );
 		}
 	);
+
+#ifdef _DEBUG
+	mWorld->setIsDebugRenderingEnabled( true );
+	auto& debug_renderer = mWorld->getDebugRenderer();
+	debug_renderer.setIsDebugItemDisplayed( DebugRenderer::DebugItem::COLLISION_SHAPE, true );
+#endif
 }
 
 void 
@@ -129,6 +135,38 @@ Physics::Update()
 		mWorld->update( mUpdateInterval );
 		mTimeAccumulator -= mUpdateInterval;
 	}
+
+#ifdef _DEBUG
+	// 超级无敌慢
+	if( !mWorld->getIsDebugRenderingEnabled() )
+	{
+		return;
+	}
+	auto& triangles = mWorld->getDebugRenderer().getTriangles();
+	if( triangles.size() > 0 )
+	{
+		std::vector<Vertex> vertices;
+		const glm::vec4 red_color{ 1.f, 0.f, 0.f, 1.f };
+		for( const DebugRenderer::DebugTriangle& tri : triangles )
+		{
+			vertices.emplace_back( Vertex{ { tri.point1.x, tri.point1.y, tri.point1.z }, red_color, {} } );
+			vertices.emplace_back( Vertex{ { tri.point2.x, tri.point2.y, tri.point2.z }, red_color, {} } );
+			vertices.emplace_back( Vertex{ { tri.point3.x, tri.point3.y, tri.point3.z }, red_color, {} } );
+		}
+		mDebugRenderable.reset();
+		mDebugRenderable = std::make_unique<Renderer::Renderable>(
+			std::move( vertices ),
+			Renderer::DEBUG_PHYSICS_SHADER,
+			0
+		);
+	}
+#endif
+}
+
+Renderer::Renderable* 
+Physics::GetDebugRenderable()
+{
+	return mDebugRenderable ? mDebugRenderable.get() : nullptr;
 }
 
 std::unique_ptr<Physics::Box>

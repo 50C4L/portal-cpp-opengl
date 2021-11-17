@@ -22,9 +22,11 @@ namespace
 	const std::string DEFAULT_VERTEX_SHADER = R"~~~(
 		#version 330 core
 		layout (location = 0) in vec3 in_pos;
-		layout (location = 1) in vec2 in_uv;
+		layout (location = 1) in vec4 in_color;
+		layout (location = 2) in vec2 in_uv;
 
 		out vec2 tex_coord;
+		out vec4 color;
 
 		uniform mat4 view_mat;
 		uniform mat4 projection_mat;
@@ -34,6 +36,7 @@ namespace
 			mat4 model_mat = mat4( 1.0 );
 			gl_Position = projection_mat * view_mat * model_mat * vec4( in_pos, 1.0 );
 			tex_coord = in_uv;
+			color = in_color;
 		}
 	)~~~";
 
@@ -52,11 +55,24 @@ namespace
 		} 
 	)~~~";
 
+	const std::string DEBUG_PHYSICS_FRAGMENT_SHADER = R"~~~(
+		#version 330 core
+		out vec4 frag_color;
+		in vec4 color;
+		
+		void main()
+		{
+			frag_color = color;
+		} 
+	)~~~";
+
 	constexpr GLuint POSITION_INDEX = 0;
-	constexpr GLuint UV_INDEX = 1;
+	constexpr GLuint COLOR_INDEX = 1;
+	constexpr GLuint UV_INDEX = 2;
 }
 
 const std::string Renderer::DEFAULT_SHADER = "DEFLAULT_SHADER";
+const std::string Renderer::DEBUG_PHYSICS_SHADER = "DEBUG_PHYSICS_SHADER";
 
 ///
 /// Shader implementaitons
@@ -165,12 +181,13 @@ Renderer::Shader::SetMat4( int location, const glm::mat4& matrix )
 ///
 /// Renderable implementaitons
 /// 
-Renderer::Renderable::Renderable( std::vector<Vertex>&& vertices, std::string shader_name, unsigned int texture_id )
+Renderer::Renderable::Renderable( std::vector<Vertex>&& vertices, std::string shader_name, unsigned int texture_id, DrawType draw_type )
 	: mVBO( 0 )
 	, mVAO( 0 )
 	, mNumberOfVertices( static_cast<int>( vertices.size() ) )
 	, mShader( shader_name )
 	, mTexture( texture_id )
+	, mDrawType( draw_type )
 {
 	glGenVertexArrays( 1, &mVAO );
 	glGenBuffers( 1, &mVBO ); 
@@ -182,8 +199,11 @@ Renderer::Renderable::Renderable( std::vector<Vertex>&& vertices, std::string sh
 	// 绑定顶点位置数据到 POSITION_INDEX
 	glVertexAttribPointer( POSITION_INDEX, 3, GL_FLOAT, GL_FALSE, sizeof( Vertex ), (void*)0 );
 	glEnableVertexAttribArray( POSITION_INDEX );
+	// 绑定顶点颜色数据到 COLOR_INDEX
+	glVertexAttribPointer( COLOR_INDEX, 4, GL_FLOAT, GL_FALSE, sizeof( Vertex ), (void*)( sizeof( glm::vec3 ) ) );
+	glEnableVertexAttribArray( COLOR_INDEX );
 	// 绑定顶点UV数据到 UV_INDEX
-	glVertexAttribPointer( UV_INDEX, 2, GL_FLOAT, GL_FALSE, sizeof( Vertex ), (void*)( sizeof( glm::vec3 ) ) );
+	glVertexAttribPointer( UV_INDEX, 2, GL_FLOAT, GL_FALSE, sizeof( Vertex ), (void*)( sizeof( glm::vec3 ) + sizeof( glm::vec4 ) ) );
 	glEnableVertexAttribArray( UV_INDEX );
 }
 
@@ -215,6 +235,12 @@ unsigned int
 Renderer::Renderable::GetTexture() const
 {
 	return mTexture;
+}
+
+Renderer::Renderable::DrawType 
+Renderer::Renderable::GetDrawType() const
+{
+	return mDrawType;
 }
 
 ///
@@ -312,13 +338,17 @@ Renderer::Renderer()
 	{
 		std::cerr << "ERROR: Failed to compile default shaders." << std::endl;
 	}
+	if( !mResources->CompileShader( DEBUG_PHYSICS_SHADER, DEFAULT_VERTEX_SHADER, DEBUG_PHYSICS_FRAGMENT_SHADER ) )
+	{
+		std::cerr << "ERROR: Failed to compile default shaders." << std::endl;
+	}
 }
 
 Renderer::~Renderer()
 {
 }
 
-void 
+void
 Renderer::AddToRenderQueue( Renderable* renderable_obj )
 {
 	if( renderable_obj )
@@ -335,22 +365,31 @@ Renderer::Render()
 
 	for( auto& renderable : mRenderableList )
 	{
-		if( !renderable )
-		{
-			continue;
-		}
-		glBindTexture( GL_TEXTURE_2D, renderable->GetTexture() );
-		auto shader = mResources->GetShader( renderable->GetShaderName() );
-		glUseProgram( shader.GetId() );
-		if( mActiveCamera )
-		{
-			// 传递当前摄像机的视图投影矩阵到当前Shader
-			shader.SetViewMatrix( mActiveCamera->GetViewMatrix() );
-			shader.SetProjectionMatrix( mProjectionMatrix );
-		}
-		glBindVertexArray( renderable->GetVAO() );
-		glDrawArrays( GL_TRIANGLES, 0, renderable->GetNumberOfVertices() );
+		RenderOneoff( renderable );
 	}
+}
+
+void 
+Renderer::RenderOneoff( Renderable* renderable_obj )
+{
+	if( !renderable_obj )
+	{
+		return;
+	}
+	glBindTexture( GL_TEXTURE_2D, renderable_obj->GetTexture() );
+	auto shader = mResources->GetShader( renderable_obj->GetShaderName() );
+	glUseProgram( shader.GetId() );
+	if( mActiveCamera )
+	{
+		// 传递当前摄像机的视图投影矩阵到当前Shader
+		shader.SetViewMatrix( mActiveCamera->GetViewMatrix() );
+		shader.SetProjectionMatrix( mProjectionMatrix );
+	}
+	glBindVertexArray( renderable_obj->GetVAO() );
+	glDrawArrays( 
+		renderable_obj->GetDrawType() == Renderable::DrawType::TRIGANLES ? GL_TRIANGLES : GL_LINES, 
+		0, 
+		renderable_obj->GetNumberOfVertices() );
 }
 
 void 

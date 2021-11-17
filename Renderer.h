@@ -15,6 +15,7 @@ namespace portal
 	struct Vertex
 	{
 		glm::vec3 pos;
+		glm::vec4 color;
 		glm::vec2 uv;
 	};
 
@@ -26,6 +27,7 @@ namespace portal
 	{
 	public:
 		static const std::string DEFAULT_SHADER;
+		static const std::string DEBUG_PHYSICS_SHADER;
 
 		///
 		/// Shader类
@@ -107,7 +109,17 @@ namespace portal
 		class Renderable
 		{
 		public:
-			Renderable( std::vector<Vertex>&& vertices, std::string shader_name, unsigned int texture_id );
+			enum class DrawType
+			{
+				LINES,
+				TRIGANLES
+			};
+
+			Renderable( 
+				std::vector<Vertex>&& vertices, 
+				std::string shader_name, 
+				unsigned int texture_id, 
+				DrawType draw_type = DrawType::TRIGANLES );
 			~Renderable();
 
 			///
@@ -128,6 +140,7 @@ namespace portal
 
 			std::string GetShaderName() const;
 			unsigned int GetTexture() const;
+			DrawType GetDrawType() const;
 
 		private:
 			unsigned int mVBO;
@@ -135,6 +148,7 @@ namespace portal
 			int mNumberOfVertices;
 			std::string mShader;
 			unsigned int mTexture;
+			DrawType mDrawType;
 		};
 
 		///
@@ -220,6 +234,7 @@ public:
 		/// 渲染!!!
 		/// 
 		void Render();
+		void RenderOneoff( Renderable* renderable_obj );
 
 		///
 		/// 将提供的摄像机作为之后渲染的摄像机

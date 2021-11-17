@@ -7,6 +7,7 @@
 #include <glm/vec3.hpp>
 
 #include "Physics.h"
+#include "Player.h"
 
 namespace portal
 {
@@ -61,10 +62,13 @@ namespace portal
 
 		void Update();
 
+		void RenderDebugInfo();
+
 	private:
 		Renderer& mRenderer;
 		std::unique_ptr<Physics> mPhysics;
 		std::unordered_map<std::string, std::unique_ptr<Level>> mLevels;
+		Player mPlayer;
 	};
 }
 
