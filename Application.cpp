@@ -110,8 +110,6 @@ Application::Application( Params params )
 	: mParams( params )
 	, mWindowWidth( DEFAULT_WIDTH )
 	, mWindowHeight( DEFAULT_HEIGHT )
-	, mMouseX( 0 )
-	, mMouseY( 0 )
 {
 	mKeyStatus.emplace( 'w', false );
 	mKeyStatus.emplace( 'a', false );
@@ -150,11 +148,9 @@ Application::Initialize()
 	glutWarpPointer( mWindowWidth/2, mWindowHeight/2 );
 	glutPassiveMotionFunc( GLUTMouseMoveCallback );
 
-	mMainCamera = std::make_shared<Camera>( static_cast<float>( mWindowWidth ), static_cast<float>( mWindowHeight ), Camera::Type::FPS );
-
 	// 初始化渲染器
 	mRenderer = std::make_unique<Renderer>();
-	mRenderer->SetCameraAsActive( mMainCamera );
+	mRenderer->ResizeViewport( { mWindowWidth, mWindowHeight } );
 
 	// 加载资源
 	mRenderer->GetResources().LoadTexture( "resources/white_wall.jpg" );
@@ -177,56 +173,45 @@ Application::Run()
 void
 Application::Update()
 {
-	if( mKeyStatus[ 'w' ] )
+	if( mLevelController )
 	{
-		mMainCamera->Move( Camera::MovementDirection::FORWARD );
+		mLevelController->HandleKeys( mKeyStatus );
+		mLevelController->Update();
 	}
-	if( mKeyStatus[ 's' ] )
-	{
-		mMainCamera->Move( Camera::MovementDirection::BACKWARD );
-	}
-	if( mKeyStatus[ 'a' ] )
-	{
-		mMainCamera->Move( Camera::MovementDirection::LEFT );
-	}
-	if( mKeyStatus[ 'd' ] )
-	{
-		mMainCamera->Move( Camera::MovementDirection::RIGHT );
-	}
-	mMainCamera->Update( UPDATE_TIME );
-	mLevelController->Update();
 }
 
 void
 Application::Render()
 {
 	mRenderer->Render();
+
+#ifdef _DEBUG
+	glDisable( GL_CULL_FACE );
 	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 	mLevelController->RenderDebugInfo();
 	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+	glEnable( GL_CULL_FACE );
+#endif
 }
 
 void 
 Application::ResizeViewport(int width, int height)
 {
-	// 重新设置viewport
-	glViewport( 0, 0, (GLsizei)width, (GLsizei)height );
 	mWindowWidth = width;
 	mWindowHeight = height;
+	if( mRenderer )
+	{
+		mRenderer->ResizeViewport( { width, height } );
+	}
 }
 
 void 
 Application::MouseMoved( int x, int y )
 {
-	float x_offset = static_cast<float>( x - mMouseX );
-	float y_offset = static_cast<float>( mMouseY - y );
-	mMouseX = x;
-	mMouseY = y;
-
-	const float sensitivitiy = 0.3f;
-	x_offset *= sensitivitiy;
-	y_offset *= sensitivitiy;
-	mMainCamera->Look( x_offset, y_offset );
+	if( mLevelController )
+	{
+		mLevelController->HandleMouse( x, y );
+	}
 }
 
 void 

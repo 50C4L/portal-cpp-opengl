@@ -78,6 +78,14 @@ namespace portal
 		/// 
 		void Look( float yaw_angle, float pitch_angle );
 
+		///
+		/// 把摄像机移动到指定点
+		/// 
+		/// @param pos
+		///		目标坐标
+		/// 
+		void SetPosition( glm::vec3 pos );
+
 	private:
 		glm::vec3 mPosition;             ///< 摄像机位置
 		glm::vec3 mCameraFrontDirection; ///< 摄像机向前方向 - FPS模式下Y轴不变

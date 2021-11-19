@@ -1,26 +1,77 @@
 ﻿#include "Physics.h"
 
-///
-/// reactphysics3d 这个库一堆warning
-/// 这里在编译它的头文件时暂时关闭那些warning
-/// 
-#pragma warning( push )
-#pragma warning(disable : 4996)
-#pragma warning(disable : 4267)
-#pragma warning(disable : 4099)
-#pragma warning(disable : 4244)
-#include <reactphysics3d/reactphysics3d.h>
-#pragma warning( pop ) 
-
 using namespace portal;
+using namespace portal::physics;
 using namespace reactphysics3d;
 
 ///
-/// Box implementation
+/// Raycast implementation
 /// 
-Physics::Box::Box( glm::vec3 pos, glm::vec3 size, PhysicsCommon& physics_comman, PhysicsWorld& world, bool is_rigid, Type type )
-	: PhysicsObject( physics_comman, world, type )
+Raycast::Raycast( glm::vec3 start, glm::vec3 stop, float continue_length, std::function<void()> callback )
+	: mRay( Vector3{ start.x, start.y, start.z }, Vector3{ stop.x, stop.y, stop.z } )
+	, mContinueLength( continue_length )
+	, mCallback( std::move( callback ) )
+{}
+
+Raycast::~Raycast()
 {
+}
+
+decimal 
+Raycast::notifyRaycastHit( const reactphysics3d::RaycastInfo& info )
+{
+	if( mCallback )
+	{
+		mCallback();
+	}
+	return mContinueLength;
+}
+
+const Ray& 
+Raycast::GetRay() const
+{
+	return mRay;
+}
+
+///
+/// Callback implementation
+/// 
+Callback::Callback( std::function<void(bool)> callback )
+	: mCallback( std::move( callback ) )
+{
+}
+
+Callback::~Callback()
+{}
+
+void 
+Callback::onContact( const CallbackData& callbackData )
+{
+	if( !mCallback )
+	{
+		return;
+	}
+	if( callbackData.getNbContactPairs() > 0 )
+	{
+		mCallback( true );
+	}
+}
+
+///
+/// PhysicsObject implementation
+/// 
+Physics::PhysicsObject::PhysicsObject( glm::vec3 pos, 
+									   reactphysics3d::PhysicsCommon& physics_comman, 
+									   reactphysics3d::PhysicsWorld& world, 
+									   bool is_rigid, 
+									   Type type, 
+									   physics::Callback callback )
+	: mPhysicsCommon( physics_comman )
+	, mWorld( world )
+	, mType( type )
+	, mCallback( std::move( callback ) )
+{
+	// 自定义析构函数
 	auto body_deleter = [ this ]( reactphysics3d::CollisionBody* body ) -> void
 	{
 		if( auto rigid_body = dynamic_cast<reactphysics3d::RigidBody*>( body ) )
@@ -65,7 +116,38 @@ Physics::Box::Box( glm::vec3 pos, glm::vec3 size, PhysicsCommon& physics_comman,
 			break;
 		}
 	}
+}
 
+Physics::PhysicsObject::~PhysicsObject()
+{}
+
+glm::vec3
+Physics::PhysicsObject::GetPosition() const
+{
+	const Transform& transform = mBody->getTransform();
+	const Vector3& position = transform.getPosition();
+	return { position.x, position.y, position.z };
+}
+
+void
+Physics::PhysicsObject::Update()
+{
+	mWorld.testCollision( mBody.get(), mCallback );
+}
+
+void 
+Physics::PhysicsObject::SetPosition( glm::vec3 pos )
+{
+	Transform transform( Vector3{ pos.x, pos.y, pos.z }, Quaternion::identity() );
+	mBody->setTransform( std::move( transform ) );
+}
+
+///
+/// Box implementation
+/// 
+Physics::Box::Box( glm::vec3 pos, glm::vec3 size, PhysicsCommon& physics_comman, PhysicsWorld& world, bool is_rigid, Type type, Callback callback )
+	: PhysicsObject( pos, physics_comman, world, is_rigid, type, std::move( callback ) )
+{
 	mBox = R3DBoxShape(
 		mPhysicsCommon.createBoxShape( Vector3{ size.x /2.f ,size.y / 2.f, size.z / 2.f } ),
 		[ this ]( reactphysics3d::BoxShape* box ){ mPhysicsCommon.destroyBoxShape( box ); }
@@ -76,13 +158,21 @@ Physics::Box::Box( glm::vec3 pos, glm::vec3 size, PhysicsCommon& physics_comman,
 Physics::Box::~Box()
 {}
 
-glm::vec3
-Physics::Box::GetPosition() const
+///
+/// Capsule implementation
+/// 
+Physics::Capsule::Capsule( glm::vec3 pos, float raidus, float height, PhysicsCommon& physics_comman, PhysicsWorld& world, bool is_rigid, Type type, Callback callback )
+	: PhysicsObject( pos, physics_comman, world, is_rigid, type, std::move( callback ) )
 {
-	const Transform& transform = mBody->getTransform();
-	const Vector3& position = transform.getPosition();
-	return { position.x, position.y, position.z };
+	mCapsule = R3DCapsuleShape(
+		mPhysicsCommon.createCapsuleShape( raidus, height ),
+		[ this ]( reactphysics3d::CapsuleShape* capsule ){ mPhysicsCommon.destroyCapsuleShape( capsule ); }
+	);
+	mBody->addCollider( mCapsule.get(), Transform::identity() );
 }
+
+Physics::Capsule::~Capsule()
+{}
 
 ///
 /// Physics class implementation
@@ -170,7 +260,19 @@ Physics::GetDebugRenderable()
 }
 
 std::unique_ptr<Physics::Box>
-Physics::CreateBox( glm::vec3 pos, glm::vec3 size, bool is_rigid, PhysicsObject::Type type )
+Physics::CreateBox( glm::vec3 pos, glm::vec3 size, bool is_rigid, PhysicsObject::Type type, physics::Callback callback )
 {
-	return std::make_unique<Physics::Box>( pos, size, *mPhysicsCommon, *mWorld, is_rigid, type );
+	return std::make_unique<Physics::Box>( pos, size, *mPhysicsCommon, *mWorld, is_rigid, type, std::move( callback ) );
+}
+
+std::unique_ptr<Physics::Capsule>
+Physics::CreateCapsule( glm::vec3 pos, float raidus, float height, bool is_rigid, PhysicsObject::Type type, physics::Callback callback )
+{
+	return std::make_unique<Physics::Capsule>( pos, raidus, height, *mPhysicsCommon, *mWorld, is_rigid, type, std::move( callback ) );
+}
+
+void 
+Physics::CastRay( physics::Raycast& ray )
+{
+	mWorld->raycast( ray.GetRay(), &ray );
 }

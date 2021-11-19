@@ -327,6 +327,7 @@ Renderer::Resources::GetShader( const std::string& name )
 Renderer::Renderer()
 	: mActiveCamera( nullptr )
 	, mProjectionMatrix( glm::mat4( 1.f ) )
+	, mViewportSize( { 0, 0 } )
 {
 	mResources = std::make_unique<Resources>();
 
@@ -346,6 +347,20 @@ Renderer::Renderer()
 
 Renderer::~Renderer()
 {
+}
+
+void 
+Renderer::ResizeViewport( glm::ivec2 size )
+{
+	// 重新设置viewport
+	glViewport( 0, 0, size.x, size.y );
+	mViewportSize = size;
+}
+
+glm::ivec2 
+Renderer::GetViewportSize()
+{
+	return mViewportSize;
 }
 
 void

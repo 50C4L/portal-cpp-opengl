@@ -120,3 +120,9 @@ Camera::Look( float yaw_angle, float pitch_angle )
 		mCameraFrontDirection = look;
 	}
 }
+
+void 
+Camera::SetPosition( glm::vec3 pos )
+{
+	mPosition = pos;
+}

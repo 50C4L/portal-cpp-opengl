@@ -222,6 +222,9 @@ public:
 		Renderer();
 		~Renderer();
 
+		void ResizeViewport( glm::ivec2 size );
+		glm::ivec2 GetViewportSize();
+
 		///
 		/// 将提供的Renderable引用加入到渲染队列
 		/// 
@@ -252,6 +255,8 @@ public:
 
 		std::unique_ptr<Resources> mResources;
 		std::list<Renderable*> mRenderableList;
+
+		glm::ivec2 mViewportSize;
 	};
 }
 

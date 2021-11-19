@@ -8,8 +8,10 @@
 
 #include "ScenePrimitives.h"
 #include "Renderer.h"
+#include "Camera.h"
 
 using namespace portal;
+using namespace portal::physics;
 
 ///
 /// Level class implementations
@@ -48,6 +50,8 @@ LevelController::Level::GetSpawn() const
 /// 
 LevelController::LevelController( Renderer& renderer )
 	: mRenderer( renderer )
+	, mMouseX( 0 )
+	, mMouseY( 0 )
 {
 }
 
@@ -158,7 +162,10 @@ LevelController::ChangeLevelTo( const std::string& path )
 	// TODO: Release the previous level
 
 	// 改变玩家出生点
-	mPlayer.Spawn( { 0.f, 20.f, 0.f }, *mPhysics );
+	auto view_size = mRenderer.GetViewportSize();
+	mMainCamera = std::make_shared<Camera>( static_cast<float>( view_size.x ), static_cast<float>( view_size.y ), Camera::Type::FPS );
+	mPlayer = std::make_unique<Player>( *mPhysics );
+	mPlayer->Spawn( { 0.f, 20.f, 0.f }, mMainCamera );
 
 	// 把关卡加入到渲染队列
 	auto& walls = itr->second->GetWalls();
@@ -175,6 +182,7 @@ LevelController::ChangeLevelTo( const std::string& path )
 		wall.mCollisionBox = mPhysics->CreateBox( wall.position, { wall.width, wall.height, wall.depth }, true, Physics::PhysicsObject::Type::STATIC );
 		mRenderer.AddToRenderQueue( wall.render_instance.get() );
 	}
+	mRenderer.SetCameraAsActive( mMainCamera );
 }
 
 void
@@ -184,6 +192,45 @@ LevelController::Update()
 	{
 		mPhysics->Update();
 	}
+	if( mPlayer )
+	{
+		mPlayer->Update();
+	}
+}
+
+void 
+LevelController::HandleKeys( std::unordered_map<unsigned int, bool>& key_map )
+{
+	if( key_map[ 'w' ] )
+	{
+		mPlayer->Move( Player::MoveDirection::FORWARD );
+	}
+	if( key_map[ 's' ] )
+	{
+		mPlayer->Move( Player::MoveDirection::BACKWARD );
+	}
+	if( key_map[ 'a' ] )
+	{
+		mPlayer->Move( Player::MoveDirection::LEFT );
+	}
+	if( key_map[ 'd' ] )
+	{
+		mPlayer->Move( Player::MoveDirection::RIGHT );
+	}
+}
+
+void 
+LevelController::HandleMouse( int x, int y )
+{
+	float x_offset = static_cast<float>( x - mMouseX );
+	float y_offset = static_cast<float>( mMouseY - y );
+	mMouseX = x;
+	mMouseY = y;
+
+	const float sensitivitiy = 0.3f;
+	x_offset *= sensitivitiy;
+	y_offset *= sensitivitiy;
+	mPlayer->Look( x_offset, y_offset );
 }
 
 void

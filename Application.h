@@ -109,9 +109,6 @@ namespace portal
 		int mWindowHeight;
 		std::unique_ptr<Renderer> mRenderer;
 		std::unique_ptr<LevelController> mLevelController;
-		int mMouseX;
-		int mMouseY;
-		std::shared_ptr<Camera> mMainCamera;
 		std::unordered_map<unsigned int, bool> mKeyStatus;
 	};
 }

@@ -13,6 +13,7 @@ namespace portal
 {
 	class SceneBox;
 	class Renderer;
+	class Camera;
 
 	class LevelController
 	{
@@ -30,7 +31,7 @@ namespace portal
 				std::string shader_name;
 
 				std::unique_ptr<SceneBox> render_instance;
-				std::unique_ptr<Physics::Box> mCollisionBox;
+				std::unique_ptr<physics::Physics::Box> mCollisionBox;
 			};
 
 			Level();
@@ -61,14 +62,19 @@ namespace portal
 		void ChangeLevelTo( const std::string& path );
 
 		void Update();
+		void HandleKeys( std::unordered_map<unsigned int, bool>& key_map );
+		void HandleMouse( int x, int y );
 
 		void RenderDebugInfo();
 
 	private:
 		Renderer& mRenderer;
-		std::unique_ptr<Physics> mPhysics;
+		std::unique_ptr<physics::Physics> mPhysics;
 		std::unordered_map<std::string, std::unique_ptr<Level>> mLevels;
-		Player mPlayer;
+		std::unique_ptr<Player> mPlayer;
+		std::shared_ptr<Camera> mMainCamera;
+		int mMouseX;
+		int mMouseY;
 	};
 }
 
