@@ -13,6 +13,9 @@ namespace portal
 	class Player
 	{
 	public:
+		///
+		/// 移动方向
+		/// 
 		enum class MoveDirection
 		{
 			FORWARD,
@@ -21,6 +24,9 @@ namespace portal
 			RIGHT
 		};
 
+		///
+		/// 构造函数
+		/// 
 		Player( physics::Physics& physics );
 		~Player();
 
@@ -48,6 +54,12 @@ namespace portal
 		/// 
 		void SetGravity( float gravity_acc );
 
+		///
+		/// 玩家按设定的速度向指定方向移动
+		/// 
+		/// @param dir
+		///		方向
+		/// 
 		void Move( MoveDirection dir );
 
 		///
@@ -66,22 +78,22 @@ namespace portal
 		void OnGroundRayHit();
 
 		physics::Physics& mPhysics;
-		std::unique_ptr<physics::Physics::Capsule> mCollisionCapsule;
-		bool mIsActive;
-		float mGravityAcc;
-		bool mIsGrounded;
+		std::unique_ptr<physics::Physics::Capsule> mCollisionCapsule; //< 胶囊碰撞体
+		bool mIsActive;    //< 是否被激活，玩家只有在调用Spawn()出生后才会被激活
+		float mGravityAcc; //< 重力加速度
+		bool mIsGrounded;  //< 玩家是否站在“地面”上
 
 		// time
 		std::chrono::steady_clock::time_point mPreviousUpdateTime;
 		float mFallingAccumulatedSec;
 
-		std::unique_ptr<physics::Raycast> mGroudDetectionRay;
-		int mDownCastHitNumber;
+		// 地面检测
+		std::unique_ptr<physics::Raycast> mGroudDetectionRay; //< 往正下方发射的射线
+		int mDownCastHitNumber; //< 地面射线击中物体的次数
 
 		std::shared_ptr<Camera> mMainCamera;
 
 		float mMoveVelocity;               ///< 移动速度
-		glm::vec3 mPositionDeltaPerSecond; ///< 累积每秒移动变量
 	};
 }
 

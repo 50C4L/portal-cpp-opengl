@@ -130,6 +130,14 @@ Physics::PhysicsObject::GetPosition() const
 }
 
 void
+Physics::PhysicsObject::Translate( glm::vec3 offset )
+{
+	glm::vec3 new_pos = GetPosition() + offset;
+	Transform transform( Vector3{ new_pos.x, new_pos.y, new_pos.z }, Quaternion::identity() );
+	mBody->setTransform( std::move( transform ) );
+}
+
+void
 Physics::PhysicsObject::Update()
 {
 	mWorld.testCollision( mBody.get(), mCallback );

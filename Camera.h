@@ -13,10 +13,13 @@ namespace portal
 	class Camera
 	{
 	public:
+		///
+		/// 摄像机类型
+		/// 
 		enum class Type
 		{
-			FPS,
-			FREE
+			FPS,  //< 第一人称射击摄像机，上下看不会影响移动的方向
+			FREE  //< 自由摄像机，前进后退方向根据视线变化
 		};
 
 		///
@@ -32,6 +35,15 @@ namespace portal
 			BACKWARD
 		};
 
+		///
+		/// 构造函数
+		/// 
+		/// @param view_width, view_height
+		///		视口的大小
+		/// 
+		/// @param type
+		///		摄像机种类
+		/// 
 		Camera( float view_width, float view_height, Type type );
 		~Camera();
 
@@ -57,7 +69,10 @@ namespace portal
 		/// @param ms_passed
 		///		距离上次调用过去的时间（毫秒），用于根据速度计算摄像机位置
 		/// 
-		void Update( int ms_passed );
+		/// @return vec3
+		///		这次更新的位置变量
+		/// 
+		glm::vec3 Update( int ms_passed );
 
 		///
 		/// 移动摄像机
@@ -79,12 +94,32 @@ namespace portal
 		void Look( float yaw_angle, float pitch_angle );
 
 		///
+		/// 移动摄像机位置
+		/// 
+		/// @param offset
+		///		空间移动的量
+		/// 
+		void Translate( glm::vec3 offset );
+
+		///
 		/// 把摄像机移动到指定点
 		/// 
 		/// @param pos
 		///		目标坐标
 		/// 
 		void SetPosition( glm::vec3 pos );
+		glm::vec3 GetPosition();
+
+		///
+		/// 设置摄像机速度
+		/// 
+		/// @param value
+		///		单位每秒
+		/// 
+		void SetMoveVelocity( float value );
+
+		glm::vec3 GetFrontDirection();
+		glm::vec3 GetRightDirection();
 
 	private:
 		glm::vec3 mPosition;             ///< 摄像机位置

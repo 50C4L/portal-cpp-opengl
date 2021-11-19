@@ -122,8 +122,19 @@ namespace portal
 					DYNAMIC    //< 动态物体，与所有物体发生碰撞，受力影响
 				};
 
+				///
+				/// 位置的getter和setter
+				/// 
 				glm::vec3 GetPosition() const;
 				void SetPosition( glm::vec3 pos );
+
+				///
+				/// 移动位置
+				/// 
+				/// @param offset
+				///		空间中移动的量
+				/// 
+				void Translate( glm::vec3 offset );
 
 				///
 				/// 如果想要physics::Callback工作正常

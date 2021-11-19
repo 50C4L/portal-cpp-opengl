@@ -47,7 +47,7 @@ Camera::GetProjectionMatrix()
 	);
 }
 
-void
+glm::vec3
 Camera::Update( int ms_passed )
 {
 	// 更新右边方向
@@ -55,10 +55,13 @@ Camera::Update( int ms_passed )
 
 	// 根据更新间隔和速度更新摄像机位置
 	const float sec_passed = ms_passed / 1000.f;
-	mPosition += mPositionDeltaPerSecond * sec_passed;
+	glm::vec3 offset = mPositionDeltaPerSecond * sec_passed;
+	mPosition +=offset;
 
 	// 让镜头慢慢停下
 	mPositionDeltaPerSecond *= 0.8f;
+
+	return offset;
 }
 
 void
@@ -112,8 +115,9 @@ Camera::Look( float yaw_angle, float pitch_angle )
 
 	if( mType == Type::FPS )
 	{
-		mCameraFrontDirection.x = look.x;
-		mCameraFrontDirection.z = look.z;
+		mCameraFrontDirection = glm::normalize( 
+			glm::vec3{ cos( glm::radians( mYawAngle ) ), mCameraFrontDirection.y, sin( glm::radians( mYawAngle ) ) } 
+		);
 	}
 	else
 	{
@@ -122,7 +126,37 @@ Camera::Look( float yaw_angle, float pitch_angle )
 }
 
 void 
+Camera::Translate( glm::vec3 offset )
+{
+	mPosition += offset;
+}
+
+void 
 Camera::SetPosition( glm::vec3 pos )
 {
 	mPosition = pos;
+}
+
+glm::vec3 
+Camera::GetPosition()
+{
+	return mPosition;
+}
+
+void 
+Camera::SetMoveVelocity( float value )
+{
+	mMoveVelocity = value;
+}
+
+glm::vec3 
+Camera::GetFrontDirection()
+{
+	return mCameraFrontDirection;
+}
+
+glm::vec3 
+Camera::GetRightDirection()
+{
+	return mCameraRightDirection;
 }
