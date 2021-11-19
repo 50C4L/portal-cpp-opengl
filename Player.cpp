@@ -61,6 +61,12 @@ Player::Update()
 	
 	mCollisionCapsule->Translate( camera_offset );
 	mCollisionCapsule->Update();
+
+	CastGroundCheckRay();
+	if( mDownCastHitNumber == 1 )
+	{
+		mIsGrounded = false;
+	}
 }
 
 void 
@@ -110,38 +116,34 @@ Player::Look( float yaw_angle, float pitch_angle )
 	mMainCamera->Look( yaw_angle, pitch_angle );
 }
 
-void
-Player::OnCollision( bool is_collided )
+void 
+Player::CastGroundCheckRay()
 {
-	// 地面检测
 	// 当玩家胶囊发生碰撞时，我们在玩家头顶高一点点的位置往正下方发射一根射线。
 	// 射线会先击中玩家本身的胶囊，然后继续前进9个单位。
 	// 如果它继续击中另一个物体，表示玩家站在一个东西上，看下面OnGroundRayHit
 	static const float continue_value = 9.f;
-	if( !mGroudDetectionRay )
-	{
-		auto pos = mCollisionCapsule->GetPosition();
-		mGroudDetectionRay = std::make_unique<Raycast>( 
-			glm::vec3{ pos.x, pos.y + 5.5, pos.z },
-			glm::vec3{ pos.x, pos.y - 5.5, pos.z },
-			continue_value,
-			std::bind( &Player::OnGroundRayHit, this )
-		);
-		mPhysics.CastRay( *mGroudDetectionRay );
-	}
+	auto pos = mCollisionCapsule->GetPosition();
+	mDownCastHitNumber = 0;
+	Raycast ray(
+		glm::vec3{ pos.x, pos.y + 5.5, pos.z },
+		glm::vec3{ pos.x, pos.y - 5.5, pos.z },
+		continue_value,
+		[this]()
+		{
+			mDownCastHitNumber ++;
+		}
+	);
+	mPhysics.CastRay( ray );
 }
 
-void 
-Player::OnGroundRayHit()
+void
+Player::OnCollision( bool is_collided )
 {
-	if( !mIsGrounded )
+	// 地面检测
+	if( !mIsGrounded && mDownCastHitNumber >= 2)
 	{
-		mDownCastHitNumber ++;
-		if( mDownCastHitNumber >= 2)
-		{
-			mIsGrounded = true;
-			mFallingAccumulatedSec = 0;
-			mDownCastHitNumber = 0;
-		}
+		mIsGrounded = true;
+		mFallingAccumulatedSec = 0;
 	}
 }

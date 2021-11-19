@@ -74,8 +74,8 @@ namespace portal
 		void Look( float yaw_angle, float pitch_angle );
 		
 	private:
+		void CastGroundCheckRay();
 		void OnCollision( bool is_collided );
-		void OnGroundRayHit();
 
 		physics::Physics& mPhysics;
 		std::unique_ptr<physics::Physics::Capsule> mCollisionCapsule; //< 胶囊碰撞体
