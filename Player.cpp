@@ -7,13 +7,14 @@ using namespace portal::physics;
 
 Player::Player( Physics& physics )
 	: mPhysics( physics )
+	, mCapsulePrevPos( 0.f )
 	, mIsActive( false )
-	, mGravityAcc( -9.81f )
 	, mIsGrounded( false )
 	, mPreviousUpdateTime( std::chrono::steady_clock::now() )
 	, mFallingAccumulatedSec( 0.f )
 	, mDownCastHitNumber( 0 )
-	, mMoveVelocity( 10.0f )
+	, mMoveVelocity( 15.0f )
+	, mPositionDeltaPerSecond( 0.f )
 {}
 
 Player::~Player()
@@ -28,10 +29,11 @@ Player::Spawn( glm::vec3 position, std::shared_ptr<Camera> camera )
 	mCollisionCapsule = mPhysics.CreateCapsule( 
 		position, 
 		1.8f, 5.f, 
-		false, 
-		Physics::PhysicsObject::Type::STATIC,
+		true, 
+		Physics::PhysicsObject::Type::DYNAMIC,
 		{ std::bind( &Player::OnCollision, this, std::placeholders::_1 ) }
 	);
+	mCapsulePrevPos = position;
 	mIsActive = true;
 	mPreviousUpdateTime = std::chrono::steady_clock::now();
 }
@@ -45,21 +47,26 @@ Player::Update()
 	}
 
 	auto current_time = std::chrono::steady_clock::now();
-	long long delta_ms = std::chrono::duration_cast<std::chrono::milliseconds>( current_time - mPreviousUpdateTime ).count();
-	float delta_sec = delta_ms / 1000.f;
+	float delta_seconds = std::chrono::duration<float, std::milli>( current_time - mPreviousUpdateTime ).count() / 1000.f;
 	mPreviousUpdateTime = current_time;
 
-	auto camera_offset = mMainCamera->Update( static_cast<int>( delta_ms ) );
+	glm::vec3 offset = mPositionDeltaPerSecond * delta_seconds;
+	mCollisionCapsule->Translate( offset );
+
 	if( !mIsGrounded )
 	{
-		mFallingAccumulatedSec += delta_sec;
-		float current_velocity = mGravityAcc * mFallingAccumulatedSec;
-		float offset = current_velocity * delta_sec;
-		mMainCamera->Translate( { 0.f, offset, 0.f } );
-		camera_offset.y += offset;
+		mPositionDeltaPerSecond *= 0.8f;
+	}
+	else
+	{
+		mPositionDeltaPerSecond *= 0.0f;
 	}
 	
-	mCollisionCapsule->Translate( camera_offset );
+
+	auto pos = mCollisionCapsule->GetPosition();
+	pos.y += 4.5f;
+	mMainCamera->SetPosition( std::move( pos ) );
+	
 	mCollisionCapsule->Update();
 
 	CastGroundCheckRay();
@@ -70,12 +77,6 @@ Player::Update()
 }
 
 void 
-Player::SetGravity( float gravity_acc )
-{
-	mGravityAcc = gravity_acc;
-}
-
-void 
 Player::Move( MoveDirection dir )
 {
 	if( !mIsActive )
@@ -83,21 +84,23 @@ Player::Move( MoveDirection dir )
 		return;
 	}
 
-	if( mMainCamera )
+	if( mMainCamera && mIsGrounded )
 	{
+		glm::vec3 forward_dir = mMainCamera->GetFrontDirection();
+		glm::vec3 right_dir = mMainCamera->GetRightDirection();
 		switch( dir )
 		{
 		case MoveDirection::LEFT:
-			mMainCamera->Move( Camera::MovementDirection::LEFT );
+			mPositionDeltaPerSecond -= right_dir * mMoveVelocity;
 			break;
 		case MoveDirection::RIGHT:
-			mMainCamera->Move( Camera::MovementDirection::RIGHT );
+			mPositionDeltaPerSecond += right_dir * mMoveVelocity;
 			break;
 		case MoveDirection::FORWARD:
-			mMainCamera->Move( Camera::MovementDirection::FORWARD );
+			mPositionDeltaPerSecond += forward_dir * mMoveVelocity;
 			break;
 		case MoveDirection::BACKWARD:
-			mMainCamera->Move( Camera::MovementDirection::BACKWARD );
+			mPositionDeltaPerSecond -= forward_dir * mMoveVelocity;
 			break;
 		default:
 			break;

@@ -177,6 +177,7 @@ namespace portal
 				R3DCollisionBody mBody;
 				Type mType;
 				physics::Callback mCallback;
+				bool mIsRigid;
 			};
 
 			///

@@ -188,13 +188,13 @@ LevelController::ChangeLevelTo( const std::string& path )
 void
 LevelController::Update()
 {
-	if( mPhysics )
-	{
-		mPhysics->Update();
-	}
 	if( mPlayer )
 	{
 		mPlayer->Update();
+	}
+	if( mPhysics )
+	{
+		mPhysics->Update();
 	}
 }
 

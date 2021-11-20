@@ -50,9 +50,6 @@ Camera::GetProjectionMatrix()
 glm::vec3
 Camera::Update( int ms_passed )
 {
-	// 更新右边方向
-	mCameraRightDirection = glm::normalize( glm::cross( mCameraFrontDirection, mCameraUpDirection ) );
-
 	// 根据更新间隔和速度更新摄像机位置
 	const float sec_passed = ms_passed / 1000.f;
 	glm::vec3 offset = mPositionDeltaPerSecond * sec_passed;
@@ -123,6 +120,8 @@ Camera::Look( float yaw_angle, float pitch_angle )
 	{
 		mCameraFrontDirection = look;
 	}
+	// 更新右边方向
+	mCameraRightDirection = glm::normalize( glm::cross( mCameraFrontDirection, mCameraUpDirection ) );
 }
 
 void 

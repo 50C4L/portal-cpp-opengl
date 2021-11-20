@@ -47,14 +47,6 @@ namespace portal
 		void Update();
 
 		///
-		/// 设置玩家重力
-		/// 
-		/// @param gravity_acc
-		///		单位/秒^2
-		/// 
-		void SetGravity( float gravity_acc );
-
-		///
 		/// 玩家按设定的速度向指定方向移动
 		/// 
 		/// @param dir
@@ -79,8 +71,8 @@ namespace portal
 
 		physics::Physics& mPhysics;
 		std::unique_ptr<physics::Physics::Capsule> mCollisionCapsule; //< 胶囊碰撞体
+		glm::vec3 mCapsulePrevPos; //< 胶囊在上一个Update的位置，用于计算摄像机的offset
 		bool mIsActive;    //< 是否被激活，玩家只有在调用Spawn()出生后才会被激活
-		float mGravityAcc; //< 重力加速度
 		bool mIsGrounded;  //< 玩家是否站在“地面”上
 
 		// time
@@ -92,8 +84,8 @@ namespace portal
 		int mDownCastHitNumber; //< 地面射线击中物体的次数
 
 		std::shared_ptr<Camera> mMainCamera;
-
-		float mMoveVelocity;               ///< 移动速度
+		float mMoveVelocity;               //< 移动速度
+		glm::vec3 mPositionDeltaPerSecond; //< 累积每秒移动变量
 	};
 }
 

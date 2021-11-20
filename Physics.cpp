@@ -4,6 +4,14 @@ using namespace portal;
 using namespace portal::physics;
 using namespace reactphysics3d;
 
+namespace
+{
+	Vector3 glm_vec_to_rp3d_vec( const glm::vec3 glm_vec )
+	{
+		return Vector3{ glm_vec.x, glm_vec.y, glm_vec.z };
+	}
+}
+
 ///
 /// Raycast implementation
 /// 
@@ -70,6 +78,7 @@ Physics::PhysicsObject::PhysicsObject( glm::vec3 pos,
 	, mWorld( world )
 	, mType( type )
 	, mCallback( std::move( callback ) )
+	, mIsRigid( is_rigid )
 {
 	// 自定义析构函数
 	auto body_deleter = [ this ]( reactphysics3d::CollisionBody* body ) -> void
