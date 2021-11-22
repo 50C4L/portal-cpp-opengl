@@ -184,14 +184,7 @@ void
 Application::Render()
 {
 	mRenderer->Render();
-
-#ifdef _DEBUG
-	glDisable( GL_CULL_FACE );
-	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 	mLevelController->RenderDebugInfo();
-	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-	glEnable( GL_CULL_FACE );
-#endif
 }
 
 void 

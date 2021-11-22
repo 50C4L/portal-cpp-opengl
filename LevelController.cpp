@@ -62,7 +62,7 @@ LevelController::~LevelController()
 void
 LevelController::Initialize( int update_interval_ms )
 {
-	mPhysics = std::make_unique<Physics>();
+	mPhysics = std::make_unique<Physics>( mRenderer );
 	mPhysics->Initialize( update_interval_ms / 1000.f );
 }
 
@@ -179,7 +179,7 @@ LevelController::ChangeLevelTo( const std::string& path )
 			wall.shader_name,
 			mRenderer.GetResources().GetTextureId( wall.texture_path )
 		);
-		wall.mCollisionBox = mPhysics->CreateBox( wall.position, { wall.width, wall.height, wall.depth }, true, Physics::PhysicsObject::Type::STATIC );
+		wall.mCollisionBox = mPhysics->CreateBox( wall.position, { wall.width, wall.height, wall.depth }, Physics::PhysicsObject::Type::STATIC );
 		mRenderer.AddToRenderQueue( wall.render_instance.get() );
 	}
 	mRenderer.SetCameraAsActive( mMainCamera );
@@ -236,8 +236,8 @@ LevelController::HandleMouse( int x, int y )
 void
 LevelController::RenderDebugInfo()
 {
-	if( auto debug_obj = mPhysics->GetDebugRenderable() )
+	if( mPhysics )
 	{
-		mRenderer.RenderOneoff( debug_obj );
+		mPhysics->DebugRender();
 	}
 }

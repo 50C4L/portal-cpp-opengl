@@ -29,7 +29,6 @@ Player::Spawn( glm::vec3 position, std::shared_ptr<Camera> camera )
 	mCollisionCapsule = mPhysics.CreateCapsule( 
 		position, 
 		1.8f, 5.f, 
-		true, 
 		Physics::PhysicsObject::Type::DYNAMIC,
 		{ std::bind( &Player::OnCollision, this, std::placeholders::_1 ) }
 	);
@@ -51,7 +50,7 @@ Player::Update()
 	mPreviousUpdateTime = current_time;
 
 	glm::vec3 offset = mPositionDeltaPerSecond * delta_seconds;
-	mCollisionCapsule->Translate( offset );
+	//mCollisionCapsule->Translate( offset );
 
 	if( !mIsGrounded )
 	{
@@ -128,7 +127,7 @@ Player::CastGroundCheckRay()
 	static const float continue_value = 9.f;
 	auto pos = mCollisionCapsule->GetPosition();
 	mDownCastHitNumber = 0;
-	Raycast ray(
+	/*Raycast ray(
 		glm::vec3{ pos.x, pos.y + 5.5, pos.z },
 		glm::vec3{ pos.x, pos.y - 5.5, pos.z },
 		continue_value,
@@ -137,7 +136,7 @@ Player::CastGroundCheckRay()
 			mDownCastHitNumber ++;
 		}
 	);
-	mPhysics.CastRay( ray );
+	mPhysics.CastRay( ray );*/
 }
 
 void

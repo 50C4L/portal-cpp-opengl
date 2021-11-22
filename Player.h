@@ -80,7 +80,7 @@ namespace portal
 		float mFallingAccumulatedSec;
 
 		// 地面检测
-		std::unique_ptr<physics::Raycast> mGroudDetectionRay; //< 往正下方发射的射线
+		//std::unique_ptr<physics::Raycast> mGroudDetectionRay; //< 往正下方发射的射线
 		int mDownCastHitNumber; //< 地面射线击中物体的次数
 
 		std::shared_ptr<Camera> mMainCamera;

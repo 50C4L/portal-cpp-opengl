@@ -6,17 +6,8 @@
 #include <chrono>
 #include <glm/vec3.hpp>
 
-///
-/// reactphysics3d 这个库一堆warning
-/// 这里在编译它的头文件时暂时关闭那些warning
-/// 
-#pragma warning( push )
-#pragma warning(disable : 4996)
-#pragma warning(disable : 4267)
-#pragma warning(disable : 4099)
-#pragma warning(disable : 4244)
-#include <reactphysics3d/reactphysics3d.h>
-#pragma warning( pop ) 
+#include <bullet/btBulletCollisionCommon.h>
+#include <bullet/btBulletDynamicsCommon.h>
 
 #include "Renderer.h"
 
@@ -29,7 +20,7 @@ namespace portal
 		/// 定义一条点到点的射线，如果它击中了任何物理物体，callback函数会被调用。
 		/// 使用Physics::CastRay()来发射射线
 		/// 
-		class Raycast : public reactphysics3d::RaycastCallback
+		/*class Raycast : public reactphysics3d::RaycastCallback
 		{
 			public:
 				///
@@ -63,12 +54,12 @@ namespace portal
 				reactphysics3d::Ray mRay;
 				float mContinueLength;
 				std::function<void()> mCallback;
-		};
+		};*/
 
 		///
 		/// 物体碰撞回调
 		/// 
-		class Callback : public reactphysics3d::CollisionCallback
+		class Callback
 		{
 		public:
 			Callback()
@@ -83,14 +74,11 @@ namespace portal
 			Callback( std::function<void(bool)> callback );
 			~Callback();
 
-			///
-			/// reactphysics3d::CollisionCallback::onContact
-			///
-			virtual void onContact(const CallbackData& callbackData) override;
-
 		private:
 			std::function<void(bool)> mCallback;
 		};
+
+		class DebugRenderer;
 
 		///
 		/// 物理主类
@@ -99,12 +87,6 @@ namespace portal
 		class Physics
 		{
 		public:
-			/// 利用RAII来自动释放
-			using R3DCollisionBody = std::unique_ptr<reactphysics3d::CollisionBody, std::function<void(reactphysics3d::CollisionBody*)>>;
-			using R3DRigidBody = std::unique_ptr<reactphysics3d::RigidBody, std::function<void(reactphysics3d::RigidBody*)>>;
-			using R3DBoxShape = std::unique_ptr<reactphysics3d::BoxShape, std::function<void(reactphysics3d::BoxShape*)>>;
-			using R3DCapsuleShape = std::unique_ptr<reactphysics3d::CapsuleShape, std::function<void(reactphysics3d::CapsuleShape*)>>;
-
 			///
 			/// 物理物体基础
 			/// 
@@ -149,35 +131,38 @@ namespace portal
 				/// @param pos
 				///		位置
 				/// 
-				/// @param physics_common
-				///		Reference to reactphysics3d::PhysicsCommon
-				/// 
 				/// @param world
-				///		Reference to reactphysics3d::PhysicsWorld
-				/// 
-				/// @param is_rigid
-				///		设置物体是否为刚体
+				///		Reference to btDiscreteDynamicsWorld
 				/// 
 				/// @param type
-				///		刚体类型，只有is_rigid为true时生效
+				///		刚体类型
 				/// 
 				/// @param callback
 				///		本物体发生碰撞时调用的回调函数，必须确保Update()有定期被调用
 				/// 
-				PhysicsObject( glm::vec3 pos, 
-							   reactphysics3d::PhysicsCommon& physics_common, 
-							   reactphysics3d::PhysicsWorld& world, 
-							   bool is_rigid, 
+				PhysicsObject( glm::vec3 pos,
+							   btDiscreteDynamicsWorld& world,
 							   Type type,
 							   physics::Callback callback );
 				~PhysicsObject();
 
-				reactphysics3d::PhysicsCommon& mPhysicsCommon;
-				reactphysics3d::PhysicsWorld& mWorld;
-				R3DCollisionBody mBody;
+				///
+				/// 创建刚体
+				/// 
+				/// @param pos
+				///		中心位置
+				/// 
+				/// @param collision_shape
+				///		btCollisionShape指针
+				/// 
+				void BuildRigidBody( glm::vec3 pos, btCollisionShape* collision_shape );
+
+				btDiscreteDynamicsWorld& mWorld;
 				Type mType;
 				physics::Callback mCallback;
 				bool mIsRigid;
+				std::unique_ptr<btRigidBody> mBody;
+				std::unique_ptr<btCollisionShape> mShape;
 			};
 
 			///
@@ -196,32 +181,21 @@ namespace portal
 				/// @param size
 				///		长宽高
 				/// 
-				/// @param physics_common
-				///		Reference to reactphysics3d::PhysicsCommon
-				/// 
 				/// @param world
-				///		Reference to reactphysics3d::PhysicsWorld
-				/// 
-				/// @param is_rigid
-				///		设置物体是否为刚体
+				///		Reference to btDiscreteDynamicsWorld
 				/// 
 				/// @param type
-				///		刚体类型，只有is_rigid为true时生效
+				///		刚体类型
 				/// 
 				/// @param callback
 				///		本物体发生碰撞时调用的回调函数，必须确保Update()有定期被调用
 				///  
 				Box( glm::vec3 pos, 
 					 glm::vec3 size, 
-					 reactphysics3d::PhysicsCommon& physics_comman, 
-					 reactphysics3d::PhysicsWorld& world, 
-					 bool is_rigid, 
+					 btDiscreteDynamicsWorld& world,
 					 Type type,
 					 physics::Callback callback );
 				~Box();
-
-			private:
-				R3DBoxShape mBox;
 			};
 
 			///
@@ -243,17 +217,11 @@ namespace portal
 				/// @param height
 				///		胶囊身体的长度
 				/// 
-				/// @param physics_common
-				///		Reference to reactphysics3d::PhysicsCommon
-				/// 
 				/// @param world
-				///		Reference to reactphysics3d::PhysicsWorld
-				/// 
-				/// @param is_rigid
-				///		设置物体是否为刚体
+				///		Reference to btDiscreteDynamicsWorld
 				/// 
 				/// @param type
-				///		刚体类型，只有is_rigid为true时生效
+				///		刚体类型
 				/// 
 				/// @param callback
 				///		本物体发生碰撞时调用的回调函数，必须确保Update()有定期被调用
@@ -261,22 +229,17 @@ namespace portal
 				Capsule( glm::vec3 pos, 
 						 float raidus, 
 						 float height, 
-						 reactphysics3d::PhysicsCommon& physics_comman, 
-						 reactphysics3d::PhysicsWorld& world, 
-						 bool is_rigid, 
+						 btDiscreteDynamicsWorld& world, 
 						 Type type,
 						 physics::Callback callback );
 				~Capsule();
-
-			private:
-				R3DCapsuleShape mCapsule;
 			};
 
 		public:
 			///
 			/// 构造函数
 			/// 
-			Physics();
+			Physics( Renderer& renderer );
 			~Physics();
 
 			///
@@ -290,46 +253,43 @@ namespace portal
 			///
 			/// 更新物理信息，调用频率越高结果越准确
 			/// 
+			/// @param enable_debug_draw
+			///		是否渲染物理debug数据
+			/// 
 			void Update();
-
-			///
-			/// 获取用于渲染的debug渲染件
-			/// 
-			/// @return Renderer::Renderable*
-			///		Poniter to Renderer::Renderable
-			/// 
-			Renderer::Renderable* GetDebugRenderable();
 
 			///
 			/// 创建盒子
 			/// 
 			/// 参数请见Box构造函数
 			/// 
-			std::unique_ptr<Box> CreateBox( glm::vec3 pos, glm::vec3 size, bool is_rigid, PhysicsObject::Type type, physics::Callback callback = {} );
+			std::unique_ptr<Box> CreateBox( glm::vec3 pos, glm::vec3 size, PhysicsObject::Type type, physics::Callback callback = {} );
 
 			///
 			/// 创建胶囊
 			/// 
 			/// 参数请见Capsule构造函数
 			/// 
-			std::unique_ptr<Capsule> CreateCapsule( glm::vec3 pos, float raidus, float height, bool is_rigid, PhysicsObject::Type type, physics::Callback callback = {} );
+			std::unique_ptr<Capsule> CreateCapsule( glm::vec3 pos, float raidus, float height, PhysicsObject::Type type, physics::Callback callback = {} );
 
 			///
 			/// 发射射线
 			/// 
-			void CastRay( physics::Raycast& ray );
+			// void CastRay( physics::Raycast& ray );
+
+			void DebugRender();
 
 		private:
-			using R3DPhysicsWorld = std::unique_ptr<reactphysics3d::PhysicsWorld, std::function<void(reactphysics3d::PhysicsWorld*)>>;
+			std::unique_ptr<btDefaultCollisionConfiguration> mConfiguration;
+			std::unique_ptr<btCollisionDispatcher> mCollisionDispatcher;
+			std::unique_ptr<btBroadphaseInterface> mBroadphaseInterface;
+			std::unique_ptr<btSequentialImpulseConstraintSolver> mSequentialImpulseConstraintSolver;
+			std::unique_ptr<btDiscreteDynamicsWorld> mWorld;
 
-			std::unique_ptr<reactphysics3d::PhysicsCommon> mPhysicsCommon;
-			R3DPhysicsWorld mWorld;
-
-			float mUpdateInterval;  //< 物理更新间隔
 			std::chrono::steady_clock::time_point mPreviousUpdateTimepoint; //< 上一次Update被调用的时间点
-			float mTimeAccumulator; //< 累积非更新时间
 
-			std::unique_ptr<Renderer::Renderable> mDebugRenderable;
+			std::unique_ptr<DebugRenderer> mDebugRenderer;
+			Renderer& mRenderer;
 		};
 	}
 }
