@@ -115,6 +115,7 @@ Application::Application( Params params )
 	mKeyStatus.emplace( 'a', false );
 	mKeyStatus.emplace( 's', false );
 	mKeyStatus.emplace( 'd', false );
+	mKeyStatus.emplace( ' ', false );
 }
 
 bool

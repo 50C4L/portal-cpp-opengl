@@ -52,7 +52,7 @@ namespace portal
 		/// @param dir
 		///		方向
 		/// 
-		void Move( MoveDirection dir );
+		void HandleKeys( std::unordered_map<unsigned int, bool>& key_map );
 
 		///
 		/// 改变观察方向
@@ -67,11 +67,9 @@ namespace portal
 		
 	private:
 		void CastGroundCheckRay();
-		void OnCollision( bool is_collided );
 
 		physics::Physics& mPhysics;
 		std::unique_ptr<physics::Physics::Capsule> mCollisionCapsule; //< 胶囊碰撞体
-		glm::vec3 mCapsulePrevPos; //< 胶囊在上一个Update的位置，用于计算摄像机的offset
 		bool mIsActive;    //< 是否被激活，玩家只有在调用Spawn()出生后才会被激活
 		bool mIsGrounded;  //< 玩家是否站在“地面”上
 
@@ -84,8 +82,9 @@ namespace portal
 		int mDownCastHitNumber; //< 地面射线击中物体的次数
 
 		std::shared_ptr<Camera> mMainCamera;
-		float mMoveVelocity;               //< 移动速度
-		glm::vec3 mPositionDeltaPerSecond; //< 累积每秒移动变量
+		glm::vec3 mMoveVelocity;             //< 移动速度
+		glm::vec3 mMoveDirection;            //< 累积每秒移动变量
+		bool mIsRunning;                     //< 是否在跑步
 	};
 }
 

@@ -106,17 +106,28 @@ Physics::PhysicsObject::GetPosition() const
 }
 
 void
-Physics::PhysicsObject::Translate( glm::vec3 offset )
+Physics::PhysicsObject::SetLinearVelocity( glm::vec3 velocity )
 {
-	/*glm::vec3 new_pos = GetPosition() + offset;
-	Transform transform( Vector3{ new_pos.x, new_pos.y, new_pos.z }, Quaternion::identity() );
-	mBody->setTransform( std::move( transform ) );*/
+	mBody->setLinearVelocity( { velocity.x, velocity.y, velocity.z } );
 }
 
-void
-Physics::PhysicsObject::Update()
+glm::vec3 
+Physics::PhysicsObject::GetLinearVelocity()
 {
-	/*mWorld.testCollision( mBody.get(), mCallback );*/
+	auto veclocity = mBody->getLinearVelocity();
+	return { veclocity.x(), veclocity.y(), veclocity.z() };
+}
+
+void 
+Physics::PhysicsObject::SetAngularFactor( glm::vec3 factors )
+{
+	mBody->setAngularFactor( { factors.z, factors.y, factors.z } );
+}
+
+void 
+Physics::PhysicsObject::SetDamping( float linear, float angular )
+{
+	mBody->setDamping( linear, angular );
 }
 
 void 
@@ -126,6 +137,12 @@ Physics::PhysicsObject::SetPosition( glm::vec3 pos )
 	transform.setIdentity();
 	transform.setOrigin( btVector3( pos.x, pos.y, pos.z ) );
 	mBody->setWorldTransform( std::move( transform ) );
+}
+
+void 
+Physics::PhysicsObject::SetImpluse( glm::vec3 force, glm::vec3 pos )
+{
+	mBody->applyImpulse( { force.x, force.y, force.z }, { pos.x, pos.y, pos.z } );
 }
 
 ///
@@ -232,11 +249,19 @@ Physics::CreateCapsule( glm::vec3 pos, float raidus, float height, PhysicsObject
 	return std::make_unique<Physics::Capsule>( pos, raidus, height, *mWorld, type, std::move( callback ) );
 }
 
-//void 
-//Physics::CastRay( physics::Raycast& ray )
-//{
-//	mWorld->raycast( ray.GetRay(), &ray );
-//}
+void 
+Physics::CastRay( glm::vec3 from, glm::vec3 to, std::function<void(bool, glm::vec3)> callback )
+{
+	btVector3 from_v{ from.x, from.y, from.z };
+	btVector3 to_v{ to.x, to.y, to.z };
+	btCollisionWorld::ClosestRayResultCallback first_result( from_v, to_v );
+	mWorld->rayTest( from_v, to_v, first_result );
+
+	if( callback )
+	{
+		callback( first_result.hasHit(), { first_result.m_hitPointWorld.x(), first_result.m_hitPointWorld.y(), first_result.m_hitPointWorld.z() } );
+	}
+}
 
 void
 Physics::DebugRender()

@@ -201,22 +201,7 @@ LevelController::Update()
 void 
 LevelController::HandleKeys( std::unordered_map<unsigned int, bool>& key_map )
 {
-	if( key_map[ 'w' ] )
-	{
-		mPlayer->Move( Player::MoveDirection::FORWARD );
-	}
-	if( key_map[ 's' ] )
-	{
-		mPlayer->Move( Player::MoveDirection::BACKWARD );
-	}
-	if( key_map[ 'a' ] )
-	{
-		mPlayer->Move( Player::MoveDirection::LEFT );
-	}
-	if( key_map[ 'd' ] )
-	{
-		mPlayer->Move( Player::MoveDirection::RIGHT );
-	}
+	mPlayer->HandleKeys( key_map );
 }
 
 void 

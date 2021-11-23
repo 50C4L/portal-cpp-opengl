@@ -116,13 +116,14 @@ namespace portal
 				/// @param offset
 				///		空间中移动的量
 				/// 
-				void Translate( glm::vec3 offset );
+				void SetLinearVelocity( glm::vec3 velocity );
+				glm::vec3 GetLinearVelocity();
 
-				///
-				/// 如果想要physics::Callback工作正常
-				/// 请以同样的频率调用这个函数以及Physics::Update()
-				/// 
-				void Update();
+				void SetAngularFactor( glm::vec3 factors );
+
+				void SetDamping( float linear, float angular );
+
+				void SetImpluse( glm::vec3 force, glm::vec3 pos );
 
 			protected:
 				///
@@ -264,7 +265,7 @@ namespace portal
 			/// 参数请见Box构造函数
 			/// 
 			std::unique_ptr<Box> CreateBox( glm::vec3 pos, glm::vec3 size, PhysicsObject::Type type, physics::Callback callback = {} );
-
+			 
 			///
 			/// 创建胶囊
 			/// 
@@ -275,7 +276,7 @@ namespace portal
 			///
 			/// 发射射线
 			/// 
-			// void CastRay( physics::Raycast& ray );
+			void CastRay( glm::vec3 from, glm::vec3 to, std::function<void(bool, glm::vec3)> callback = nullptr );
 
 			void DebugRender();
 
