@@ -15,46 +15,6 @@ namespace portal
 {
 	namespace physics
 	{
-		///
-		/// 射线
-		/// 定义一条点到点的射线，如果它击中了任何物理物体，callback函数会被调用。
-		/// 使用Physics::CastRay()来发射射线
-		/// 
-		/*class Raycast : public reactphysics3d::RaycastCallback
-		{
-			public:
-				///
-				/// 构造函数
-				/// 
-				/// @param start, stop
-				///		射线开始和结束位置
-				/// 
-				/// @param continue_length
-				///		击中后继续射线继续延展的单位
-				/// 
-				/// @param callback
-				///		射线击中后调用的回调函数
-				/// 
-				Raycast( glm::vec3 start, glm::vec3 stop, float continue_length, std::function<void()> callback );
-				~Raycast();
-
-				///
-				/// reactphysics3d::RaycastCallback::notifyRaycastHit
-				///
-				virtual reactphysics3d::decimal notifyRaycastHit( const reactphysics3d::RaycastInfo& info ) override;
-
-				///
-				/// 获取rp3d的射线实例引用
-				/// 
-				/// @return reactphysics3d::Ray&
-				/// 
-				const reactphysics3d::Ray& GetRay() const;
-
-			private:
-				reactphysics3d::Ray mRay;
-				float mContinueLength;
-				std::function<void()> mCallback;
-		};*/
 
 		///
 		/// 物体碰撞回调

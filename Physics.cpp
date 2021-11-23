@@ -4,43 +4,6 @@
 using namespace portal;
 using namespace portal::physics;
 
-//namespace
-//{
-//	Vector3 glm_vec_to_rp3d_vec( const glm::vec3 glm_vec )
-//	{
-//		return Vector3{ glm_vec.x, glm_vec.y, glm_vec.z };
-//	}
-//}
-//
-/////
-///// Raycast implementation
-///// 
-//Raycast::Raycast( glm::vec3 start, glm::vec3 stop, float continue_length, std::function<void()> callback )
-//	: mRay( Vector3{ start.x, start.y, start.z }, Vector3{ stop.x, stop.y, stop.z } )
-//	, mContinueLength( continue_length )
-//	, mCallback( std::move( callback ) )
-//{}
-//
-//Raycast::~Raycast()
-//{
-//}
-//
-//decimal 
-//Raycast::notifyRaycastHit( const reactphysics3d::RaycastInfo& info )
-//{
-//	if( mCallback )
-//	{
-//		mCallback();
-//	}
-//	return mContinueLength;
-//}
-//
-//const Ray& 
-//Raycast::GetRay() const
-//{
-//	return mRay;
-//}
-//
 ///
 /// Callback implementation
 /// 
@@ -196,7 +159,7 @@ Physics::Initialize( float dt )
 		mSequentialImpulseConstraintSolver.get(), 
 		mConfiguration.get() );
 
-	mWorld->setGravity( btVector3( 0, -10, 0 ) );
+	mWorld->setGravity( btVector3( 0, -20, 0 ) );
 	mDebugRenderer = std::make_unique<DebugRenderer>( mRenderer );
 	mWorld->setDebugDrawer( mDebugRenderer.get() );
 }
@@ -209,32 +172,6 @@ Physics::Update()
 	mPreviousUpdateTimepoint = current_time;
 
 	mWorld->stepSimulation( delta_seconds, 1 );
-
-//#ifdef _DEBUG
-//	// 超级无敌慢
-//	if( !mWorld->getIsDebugRenderingEnabled() )
-//	{
-//		return;
-//	}
-//	auto& triangles = mWorld->getDebugRenderer().getTriangles();
-//	if( triangles.size() > 0 )
-//	{
-//		std::vector<Vertex> vertices;
-//		const glm::vec4 red_color{ 1.f, 0.f, 0.f, 1.f };
-//		for( const DebugRenderer::DebugTriangle& tri : triangles )
-//		{
-//			vertices.emplace_back( Vertex{ { tri.point1.x, tri.point1.y, tri.point1.z }, red_color, {} } );
-//			vertices.emplace_back( Vertex{ { tri.point2.x, tri.point2.y, tri.point2.z }, red_color, {} } );
-//			vertices.emplace_back( Vertex{ { tri.point3.x, tri.point3.y, tri.point3.z }, red_color, {} } );
-//		}
-//		mDebugRenderable.reset();
-//		mDebugRenderable = std::make_unique<Renderer::Renderable>(
-//			std::move( vertices ),
-//			Renderer::DEBUG_PHYSICS_SHADER,
-//			0
-//		);
-//	}
-//#endif
 }
 
 std::unique_ptr<Physics::Box>

@@ -117,7 +117,13 @@ Player::HandleKeys( std::unordered_map<unsigned int, bool>& key_map )
 		{
 			mMoveDirection = mMoveDirection == glm::vec3{ 0.f } ? mMoveDirection :glm::normalize( mMoveDirection );
 			mMoveVelocity = mMoveDirection * PLAYER_MAX_VELOCITY;
-			mCollisionCapsule->SetLinearVelocity( mMoveVelocity );
+			mCollisionCapsule->SetLinearVelocity(
+				{
+					mMoveVelocity.x,
+					mCollisionCapsule->GetLinearVelocity().y,
+					mMoveVelocity.z
+				}
+			);
 		}
 	}
 }
