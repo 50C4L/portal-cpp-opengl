@@ -9,10 +9,11 @@
 #include <bullet/btBulletCollisionCommon.h>
 #include <bullet/btBulletDynamicsCommon.h>
 
-#include "Renderer.h"
 
 namespace portal
 {
+	class Renderer;
+
 	namespace physics
 	{
 
@@ -71,18 +72,42 @@ namespace portal
 				void SetPosition( glm::vec3 pos );
 
 				///
-				/// 移动位置
+				/// 设置线速度
 				/// 
-				/// @param offset
-				///		空间中移动的量
+				/// @param velocity
+				///		速度
 				/// 
 				void SetLinearVelocity( glm::vec3 velocity );
 				glm::vec3 GetLinearVelocity();
 
+				///
+				/// 设置角速度因素
+				/// 
+				/// @param factors [0.0 - 1.0]
+				///		x, y, z代表三个轴上的角速度因素，0表示不能转动，1表示1:1转动
+				///
 				void SetAngularFactor( glm::vec3 factors );
 
+				///
+				/// 设置阻力
+				/// 
+				/// @param linear
+				///		线速度阻力
+				/// 
+				/// @param angular
+				///		角速度阻力
+				/// 
 				void SetDamping( float linear, float angular );
 
+				///
+				/// 施加冲击力
+				/// 
+				/// @param force
+				///		力的量和方向
+				/// 
+				/// @param pos
+				///		力的作用点
+				/// 
 				void SetImpluse( glm::vec3 force, glm::vec3 pos );
 
 			protected:
@@ -237,9 +262,13 @@ namespace portal
 			/// 
 			void CastRay( glm::vec3 from, glm::vec3 to, std::function<void(bool, glm::vec3, glm::vec3)> callback = nullptr );
 
+			///
+			/// 渲染物理Debug信息
+			/// 
 			void DebugRender();
 
 		private:
+			// Bullet3 物理所需组件
 			std::unique_ptr<btDefaultCollisionConfiguration> mConfiguration;
 			std::unique_ptr<btCollisionDispatcher> mCollisionDispatcher;
 			std::unique_ptr<btBroadphaseInterface> mBroadphaseInterface;

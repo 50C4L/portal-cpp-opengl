@@ -20,6 +20,10 @@ namespace
 	const std::string MODEL_MATRIX_UNIFORM_NAME = "model_mat";
 	const std::string VIEW_MATRIX_UNIFORM_NAME = "view_mat";
 	const std::string PROJECTION_MATRIX_UNIFORM_NAME = "projection_mat";
+	constexpr GLuint POSITION_INDEX = 0;
+	constexpr GLuint COLOR_INDEX = 1;
+	constexpr GLuint UV_INDEX = 2;
+	constexpr GLuint NORMAL_INDEX = 3;
 
 	const std::string DEFAULT_VERTEX_SHADER = R"~~~(
 		#version 330 core
@@ -62,7 +66,7 @@ namespace
 		void main()
 		{
 			vec3 light_color = vec3( 1.0, 1.0, 1.0 );
-			vec3 light_pos = vec3( 1000.0, 1000.0, 0.0 );
+			vec3 light_pos = vec3( 1000.0, 1000.0, 500.0 );
 
 			// Ambient
 			vec3 ambient = 0.15 * light_color;
@@ -91,14 +95,49 @@ namespace
 		} 
 	)~~~";
 
-	constexpr GLuint POSITION_INDEX = 0;
-	constexpr GLuint COLOR_INDEX = 1;
-	constexpr GLuint UV_INDEX = 2;
-	constexpr GLuint NORMAL_INDEX = 3;
+	const std::string PORTAL_HOLE_FRAGMENT_SHADER = R"~~~(
+		#version 330 core
+		out vec4 frag_color;
+		in vec4 color;
+		
+		void main()
+		{
+			frag_color = color;
+		} 
+	)~~~";
+
+	const std::string PORTAL_FRAME_FRAGMENT_SHADER = R"~~~(
+		#version 330 core
+		out vec4 frag_color;
+		in vec2 tex_coord;
+
+		uniform sampler2D color_texture;
+		
+		void main()
+		{
+			frag_color = texture( color_texture, tex_coord );
+		} 
+	)~~~";
+
+	int get_gl_draw_mode( Renderer::Renderable::DrawType type )
+	{
+		switch( type )
+		{
+		case Renderer::Renderable::DrawType::LINES:
+			return GL_LINES;
+		case Renderer::Renderable::DrawType::TRIANGLE_FANS:
+			return GL_TRIANGLE_FAN;
+		case Renderer::Renderable::DrawType::TRIANGLES:
+		default:
+			return GL_TRIANGLES;
+		}
+	}
 }
 
 const std::string Renderer::DEFAULT_SHADER = "DEFLAULT_SHADER";
 const std::string Renderer::DEBUG_PHYSICS_SHADER = "DEBUG_PHYSICS_SHADER";
+const std::string Renderer::PORTAL_HOLE_SHADER = "PORTAL_HOLE_SHADER";
+const std::string Renderer::PORTAL_FRAME_SHADER = "PORTAL_FRAME_SHADER";
 
 ///
 /// Shader implementaitons
@@ -420,6 +459,14 @@ Renderer::Renderer()
 	{
 		std::cerr << "ERROR: Failed to compile default shaders." << std::endl;
 	}
+	if( !mResources->CompileShader( PORTAL_HOLE_SHADER, DEFAULT_VERTEX_SHADER, PORTAL_HOLE_FRAGMENT_SHADER ) )
+	{
+		std::cerr << "ERROR: Failed to compile default shaders." << std::endl;
+	}
+	if( !mResources->CompileShader( PORTAL_FRAME_SHADER, DEFAULT_VERTEX_SHADER, PORTAL_FRAME_FRAGMENT_SHADER ) )
+	{
+		std::cerr << "ERROR: Failed to compile default shaders." << std::endl;
+	}
 }
 
 Renderer::~Renderer()
@@ -489,7 +536,7 @@ Renderer::RenderOneoff( Renderable* renderable_obj )
 	}
 	glBindVertexArray( renderable_obj->GetVAO() );
 	glDrawArrays( 
-		renderable_obj->GetDrawType() == Renderable::DrawType::TRIGANLES ? GL_TRIANGLES : GL_LINES, 
+		get_gl_draw_mode( renderable_obj->GetDrawType() ), 
 		0, 
 		renderable_obj->GetNumberOfVertices() );
 }

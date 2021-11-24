@@ -29,6 +29,8 @@ namespace portal
 	public:
 		static const std::string DEFAULT_SHADER;
 		static const std::string DEBUG_PHYSICS_SHADER;
+		static const std::string PORTAL_HOLE_SHADER;
+		static const std::string PORTAL_FRAME_SHADER;
 
 		///
 		/// Shader类
@@ -69,6 +71,12 @@ namespace portal
 			/// 
 			unsigned int GetId() const;
 
+			///
+			/// 设置模型矩阵
+			/// 
+			/// @param matrix
+			///		Const reference to matrix
+			/// 
 			void SetModelMatrix( const glm::mat4& matrix );
 
 			///
@@ -113,17 +121,36 @@ namespace portal
 		class Renderable
 		{
 		public:
+			///
+			/// 顶点列表绘制类型
+			/// 
 			enum class DrawType
 			{
 				LINES,
-				TRIGANLES
+				TRIANGLES,
+				TRIANGLE_FANS
 			};
 
+			///
+			/// 构造函数
+			/// 
+			/// @param vertices
+			///		顶点
+			/// 
+			/// @param shader_name
+			///		本次渲染用到的shader
+			/// 
+			/// @param texture_id
+			///		本次渲染用到的贴图
+			/// 
+			/// @param draw_type
+			///		绘制类型，默认三角形
+			/// 
 			Renderable( 
 				std::vector<Vertex>&& vertices, 
 				std::string shader_name, 
 				unsigned int texture_id, 
-				DrawType draw_type = DrawType::TRIGANLES );
+				DrawType draw_type = DrawType::TRIANGLES );
 			~Renderable();
 
 			///
@@ -142,8 +169,23 @@ namespace portal
 			/// 
 			int GetNumberOfVertices() const;
 
+			///
+			/// 平移
+			/// 
+			/// @param offset
+			///		平移量
+			/// 
 			void Translate( glm::vec3 offset );
 
+			///
+			/// 选择
+			/// 
+			/// @param angle
+			///		旋转角度
+			/// 
+			/// @param axis
+			///		转轴
+			/// 
 			void Rotate( float angle, glm::vec3 axis );
 
 			std::string GetShaderName() const;
@@ -246,6 +288,12 @@ public:
 		///
 		void AddToRenderQueue( Renderable* renderable_obj );
 
+		///
+		/// 从渲染队列中移除Renderable
+		/// 
+		/// @param renderable_obj
+		///		Reference to Renderable
+		///
 		void RemoveFromRenderQueue( Renderable* renderable_obj );
 
 		///

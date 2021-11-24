@@ -66,8 +66,8 @@ LevelController::Initialize( int update_interval_ms )
 	mPhysics = std::make_unique<Physics>( mRenderer );
 	mPhysics->Initialize( update_interval_ms / 1000.f );
 
-	mPortals[0] = { false, std::make_unique<Portal>( Renderer::DEFAULT_SHADER, mRenderer.GetResources().GetTextureId( "resources/blueportal.png" ) ) };
-	mPortals[1] = { false, std::make_unique<Portal>( Renderer::DEFAULT_SHADER, mRenderer.GetResources().GetTextureId( "resources/orangeportal.png" ) ) };
+	mPortals[0] = { false, std::make_unique<Portal>( mRenderer.GetResources().GetTextureId( "resources/blueportal.png" ) ) };
+	mPortals[1] = { false, std::make_unique<Portal>( mRenderer.GetResources().GetTextureId( "resources/orangeportal.png" ) ) };
 }
 
 bool 
@@ -248,8 +248,10 @@ LevelController::UpdatePortalState()
 	{
 		if( portal_info[i].is_active && mPortals[i].portal->UpdatePosition( portal_info[i].position, portal_info[i].face_dir ) )
 		{
-			mRenderer.RemoveFromRenderQueue( mPortals[i].portal.get() );
-			mRenderer.AddToRenderQueue( mPortals[i].portal.get() );
+			mRenderer.RemoveFromRenderQueue( mPortals[i].portal->GetHoleRenderable() );
+			mRenderer.RemoveFromRenderQueue( mPortals[i].portal->GetFrameRenderable() );
+			mRenderer.AddToRenderQueue( mPortals[i].portal->GetHoleRenderable() );
+			mRenderer.AddToRenderQueue( mPortals[i].portal->GetFrameRenderable() );
 		}
 		// TODO check portal position
 		mPortals[i].is_active = true;
