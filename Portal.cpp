@@ -13,12 +13,12 @@ namespace
 	generate_portal_mesh()
 	{
 		return {
-			{ { -PORTAL_WIDTH / 2.f, -PORTAL_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 0.f, 0.f } },
-			{ { -PORTAL_WIDTH / 2.f,  PORTAL_HEIGHT / 2.f, 0.f },  { 1.f, 1.f, 1.f, 1.f }, { 0.f, 1.f } },
-			{ { PORTAL_WIDTH / 2.f,  -PORTAL_HEIGHT / 2.f, 0.f },  { 1.f, 1.f, 1.f, 1.f }, { 1.f, 0.f } },
-			{ { PORTAL_WIDTH / 2.f,  -PORTAL_HEIGHT / 2.f, 0.f },  { 1.f, 1.f, 1.f, 1.f }, { 1.f, 0.f } },
-			{ { -PORTAL_WIDTH / 2.f,  PORTAL_HEIGHT / 2.f, 0.f },  { 1.f, 1.f, 1.f, 1.f }, { 0.f, 1.f } },
-			{ { PORTAL_WIDTH / 2.f,   PORTAL_HEIGHT / 2.f, 0.f },  { 1.f, 1.f, 1.f, 1.f }, { 1.f, 1.f } },
+			{ { -PORTAL_WIDTH / 2.f, -PORTAL_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 0.f, 0.f }, { 0.f, 0.f, -1.f } },
+			{ { -PORTAL_WIDTH / 2.f,  PORTAL_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 0.f, 1.f }, { 0.f, 0.f, -1.f } },
+			{ { PORTAL_WIDTH / 2.f,  -PORTAL_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 1.f, 0.f }, { 0.f, 0.f, -1.f } },
+			{ { PORTAL_WIDTH / 2.f,  -PORTAL_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 1.f, 0.f }, { 0.f, 0.f, -1.f } },
+			{ { -PORTAL_WIDTH / 2.f,  PORTAL_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 0.f, 1.f }, { 0.f, 0.f, -1.f } },
+			{ { PORTAL_WIDTH / 2.f,   PORTAL_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 1.f, 1.f }, { 0.f, 0.f, -1.f } },
 		};
 	}
 }

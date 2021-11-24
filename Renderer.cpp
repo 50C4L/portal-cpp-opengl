@@ -26,9 +26,12 @@ namespace
 		layout (location = 0) in vec3 in_pos;
 		layout (location = 1) in vec4 in_color;
 		layout (location = 2) in vec2 in_uv;
+		layout (location = 3) in vec3 in_normal;
 
 		out vec2 tex_coord;
 		out vec4 color;
+		out vec3 frag_pos;
+		out vec3 normal;
 
 		uniform mat4 model_mat;
 		uniform mat4 view_mat;
@@ -37,8 +40,11 @@ namespace
 		void main()
 		{
 			gl_Position = projection_mat * view_mat * model_mat * vec4( in_pos, 1.0 );
+			frag_pos = vec3( model_mat * vec4( in_pos, 1.0 ) );
 			tex_coord = in_uv;
 			color = in_color;
+			vec4 temp_normal = model_mat * vec4( in_normal, 1.0 );
+			normal = temp_normal.xyz;
 		}
 	)~~~";
 
@@ -47,14 +53,30 @@ namespace
 		out vec4 frag_color;
 
 		in vec2 tex_coord;
+		in vec3 frag_pos;
+		in vec3 normal;
 
 		// texture
 		uniform sampler2D color_texture;
-		
+
 		void main()
 		{
+			vec3 light_color = vec3( 1.0, 1.0, 1.0 );
+			vec3 light_pos = vec3( 1000.0, 1000.0, 0.0 );
+
+			// Ambient
+			vec3 ambient = 0.15 * light_color;
+
+			// Diffuse
+			vec3 n_normal = normalize( normal );
+			vec3 light_dir = normalize( light_pos - frag_pos );
+			float diff_f = max( dot( n_normal, light_dir ), 0.0 );
+			vec3 diffuse = diff_f * light_color;
 			
-			frag_color = texture( color_texture, tex_coord );
+			// Final
+			vec4 tex_color = texture( color_texture, tex_coord );
+			vec3 result = ( ambient + diffuse ) * tex_color.rgb;
+			frag_color = vec4( result, tex_color.a );
 		} 
 	)~~~";
 
@@ -72,6 +94,7 @@ namespace
 	constexpr GLuint POSITION_INDEX = 0;
 	constexpr GLuint COLOR_INDEX = 1;
 	constexpr GLuint UV_INDEX = 2;
+	constexpr GLuint NORMAL_INDEX = 3;
 }
 
 const std::string Renderer::DEFAULT_SHADER = "DEFLAULT_SHADER";
@@ -219,6 +242,9 @@ Renderer::Renderable::Renderable( std::vector<Vertex>&& vertices, std::string sh
 	// 绑定顶点UV数据到 UV_INDEX
 	glVertexAttribPointer( UV_INDEX, 2, GL_FLOAT, GL_FALSE, sizeof( Vertex ), (void*)( sizeof( glm::vec3 ) + sizeof( glm::vec4 ) ) );
 	glEnableVertexAttribArray( UV_INDEX );
+	// 绑定顶点法线数据到 NORMAL_INDEX
+	glVertexAttribPointer( NORMAL_INDEX, 3, GL_FLOAT, GL_FALSE, sizeof( Vertex ), (void*)( sizeof( glm::vec3 ) + sizeof( glm::vec4 ) + sizeof( glm::vec2 ) ) );
+	glEnableVertexAttribArray( NORMAL_INDEX );
 }
 
 Renderer::Renderable::~Renderable()

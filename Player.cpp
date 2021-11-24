@@ -130,7 +130,7 @@ Player::HandleKeys( std::unordered_map<unsigned int, bool>& key_map )
 		}
 		else
 		{
-			//mCollisionCapsule->SetDamping( PLAYER_GROUND_DAMPING, 0.f );
+			mCollisionCapsule->SetDamping( PLAYER_GROUND_DAMPING, 0.f );
 		}
 	}
 }
