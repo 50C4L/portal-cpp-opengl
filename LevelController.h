@@ -14,6 +14,13 @@ namespace portal
 	class SceneBox;
 	class Renderer;
 	class Camera;
+	class Portal;
+
+	struct PortalState
+	{
+		bool is_active = false;
+		std::unique_ptr<Portal> portal;
+	};
 
 	class LevelController
 	{
@@ -63,11 +70,14 @@ namespace portal
 
 		void Update();
 		void HandleKeys( std::unordered_map<unsigned int, bool>& key_map );
-		void HandleMouse( int x, int y );
+		void HandleMouseMove( int x, int y );
+		void HandleMouseButton( std::unordered_map<int, bool>& button_map );
 
 		void RenderDebugInfo();
 
 	private:
+		void UpdatePortalState();
+
 		Renderer& mRenderer;
 		std::unique_ptr<physics::Physics> mPhysics;
 		std::unordered_map<std::string, std::unique_ptr<Level>> mLevels;
@@ -75,6 +85,7 @@ namespace portal
 		std::shared_ptr<Camera> mMainCamera;
 		int mMouseX;
 		int mMouseY;
+		PortalState mPortals[2];
 	};
 }
 

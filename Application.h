@@ -43,6 +43,7 @@ namespace portal
 		static void GLUTMouseMoveCallback( int x, int y );
 		static void GLUTKeyboardDownCallback( unsigned char key, int x, int y );
 		static void GLUTKeyboardUpCallback( unsigned char key, int x, int y );
+		static void GLUTMousePressedCallback( int button, int state, int x, int y );
 
 	public:
 		///
@@ -101,6 +102,8 @@ namespace portal
 		/// 
 		void KeyChanged( unsigned char key, bool is_down );
 
+		void MousePresed( int button, bool is_pressed );
+
 	private:
 		static Ptr sInstance;
 
@@ -110,6 +113,7 @@ namespace portal
 		std::unique_ptr<Renderer> mRenderer;
 		std::unique_ptr<LevelController> mLevelController;
 		std::unordered_map<unsigned int, bool> mKeyStatus;
+		std::unordered_map<int, bool> mMouseButtonState;
 	};
 }
 

@@ -1,6 +1,7 @@
 ﻿#include "Renderer.h"
 #include <string>
 #include <iostream>
+#include <filesystem>
 
 #include <GL/glew.h>
 #include <glm/glm.hpp>
@@ -16,6 +17,7 @@ using namespace portal;
 
 namespace
 {
+	const std::string MODEL_MATRIX_UNIFORM_NAME = "model_mat";
 	const std::string VIEW_MATRIX_UNIFORM_NAME = "view_mat";
 	const std::string PROJECTION_MATRIX_UNIFORM_NAME = "projection_mat";
 
@@ -28,12 +30,12 @@ namespace
 		out vec2 tex_coord;
 		out vec4 color;
 
+		uniform mat4 model_mat;
 		uniform mat4 view_mat;
 		uniform mat4 projection_mat;
 		
 		void main()
 		{
-			mat4 model_mat = mat4( 1.0 );
 			gl_Position = projection_mat * view_mat * model_mat * vec4( in_pos, 1.0 );
 			tex_coord = in_uv;
 			color = in_color;
@@ -51,6 +53,7 @@ namespace
 		
 		void main()
 		{
+			
 			frag_color = texture( color_texture, tex_coord );
 		} 
 	)~~~";
@@ -133,6 +136,7 @@ Renderer::Shader::Shader( const std::string& vertex_shader, const std::string& f
 	}
 
 	// 获取矩阵变量在Shader中的位置
+	mModelMatUniformLocation = glGetUniformLocation( mId, MODEL_MATRIX_UNIFORM_NAME.c_str() );
 	mViewMatUniformLocation = glGetUniformLocation( mId, VIEW_MATRIX_UNIFORM_NAME.c_str() );
 	mProjectionMatUniformLocation = glGetUniformLocation( mId, PROJECTION_MATRIX_UNIFORM_NAME.c_str() );
 
@@ -156,6 +160,12 @@ unsigned int
 Renderer::Shader::GetId() const
 {
 	return mId;
+}
+
+void 
+Renderer::Shader::SetModelMatrix( const glm::mat4& matrix )
+{
+	SetMat4( mModelMatUniformLocation, matrix );
 }
 
 void 
@@ -188,6 +198,10 @@ Renderer::Renderable::Renderable( std::vector<Vertex>&& vertices, std::string sh
 	, mShader( shader_name )
 	, mTexture( texture_id )
 	, mDrawType( draw_type )
+	, mTranslation( 0.f )
+	, mRotation( 0.f )
+	, mTransform( 1.f )
+	, mIsDirty( false )
 {
 	glGenVertexArrays( 1, &mVAO );
 	glGenBuffers( 1, &mVBO ); 
@@ -225,6 +239,40 @@ Renderer::Renderable::GetNumberOfVertices() const
 	return mNumberOfVertices;
 }
 
+void 
+Renderer::Renderable::Translate( glm::vec3 offset )
+{
+	mIsDirty = true;
+	mTranslation = std::move( offset );
+}
+
+void 
+Renderer::Renderable::Rotate( float angle, glm::vec3 axis )
+{
+	mIsDirty = true;
+	mRotation = axis * angle;
+}
+
+glm::mat4
+Renderer::Renderable::GetTransform()
+{
+	if( !mIsDirty )
+	{
+		return mTransform;
+	}
+	else
+	{
+		glm::mat4 trans( 1.f );
+		trans = glm::translate( trans, mTranslation );
+		trans = glm::rotate( trans, mRotation.x, { 1.f, 0.f, 0.f} );
+		trans = glm::rotate( trans, mRotation.y, { 0.f, 1.f, 0.f} );
+		trans = glm::rotate( trans, mRotation.z, { 0.f, 0.f, 1.f} );
+		mTransform = std::move( trans );
+		mIsDirty = false;
+		return mTransform;
+	}
+}
+
 std::string
 Renderer::Renderable::GetShaderName() const
 {
@@ -256,6 +304,7 @@ Renderer::Resources::LoadTexture( const std::string& path )
 	bool success = false;
 	int width, height, num_channels;
 	unsigned char* data = stbi_load( path.c_str(), &width, &height, &num_channels, 0 );
+	auto gl_color_channel = num_channels == 3 ? GL_RGB : GL_RGBA;
 	if( data )
 	{
 		unsigned int texture_id;
@@ -265,7 +314,7 @@ Renderer::Resources::LoadTexture( const std::string& path )
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR );
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data );
+		glTexImage2D( GL_TEXTURE_2D, 0, gl_color_channel, width, height, 0, gl_color_channel, GL_UNSIGNED_BYTE, data );
 		glGenerateMipmap( GL_TEXTURE_2D );
 
 		mLoadedTextures.emplace( path, texture_id );
@@ -335,6 +384,8 @@ Renderer::Renderer()
 	glEnable( GL_CULL_FACE );
 	glCullFace( GL_BACK );
 	glFrontFace( GL_CW );
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA ); 
 	if( !mResources->CompileShader( DEFAULT_SHADER, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER ) )
 	{
 		std::cerr << "ERROR: Failed to compile default shaders." << std::endl;
@@ -373,6 +424,15 @@ Renderer::AddToRenderQueue( Renderable* renderable_obj )
 }
 
 void 
+Renderer::RemoveFromRenderQueue( Renderable* renderable_obj )
+{
+	if( renderable_obj )
+	{
+		mRenderableList.remove( renderable_obj );
+	}
+}
+
+void 
 Renderer::Render()
 {
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -397,6 +457,7 @@ Renderer::RenderOneoff( Renderable* renderable_obj )
 	if( mActiveCamera )
 	{
 		// 传递当前摄像机的视图投影矩阵到当前Shader
+		shader.SetModelMatrix( renderable_obj->GetTransform() );
 		shader.SetViewMatrix( mActiveCamera->GetViewMatrix() );
 		shader.SetProjectionMatrix( mProjectionMatrix );
 	}

@@ -142,6 +142,12 @@ Camera::GetPosition()
 	return mPosition;
 }
 
+glm::vec3 
+Camera::GetLookDirection()
+{
+	return mCameraLookDirection;
+}
+
 void 
 Camera::SetMoveVelocity( float value )
 {

@@ -10,9 +10,23 @@ namespace portal
 {
 	class Camera;
 
+	///
+	/// 简易玩家类
+	/// 使用胶囊作为物理碰撞体，移动、跳跃均作用于胶囊本身，摄像机位置绑定在胶囊上半部分。
+	/// 胶囊本身被设置为不能旋转，摄像机视线决定玩家向前移动的方向。
+	/// WASD控制玩家四方向移动，空格键跳跃。
+	/// 左键在目标表面开启传送门1（蓝色），右键传送门2（橙色）
+	/// 
 	class Player
 	{
 	public:
+		struct PortalInfo
+		{
+			bool is_active = false;
+			glm::vec3 position = glm::vec3( 0.f );
+			glm::vec3 face_dir = glm::vec3( 0.f );
+		};
+
 		///
 		/// 移动方向
 		/// 
@@ -47,12 +61,20 @@ namespace portal
 		void Update();
 
 		///
-		/// 玩家按设定的速度向指定方向移动
+		/// 处理键盘按键
 		/// 
-		/// @param dir
-		///		方向
+		/// @param key_map
+		///		Reference to std::unordered_map<unsigned int, bool>
 		/// 
 		void HandleKeys( std::unordered_map<unsigned int, bool>& key_map );
+
+		///
+		/// 处理鼠标按键
+		/// 
+		/// @param button_map
+		///		Reference to std::unordered_map<int, bool>
+		/// 
+		void HandleMouse( std::unordered_map<int, bool>& button_map );
 
 		///
 		/// 改变观察方向
@@ -64,6 +86,8 @@ namespace portal
 		///		水平角度
 		/// 
 		void Look( float yaw_angle, float pitch_angle );
+
+		const std::vector<PortalInfo>& GetPortalInfo() const;
 		
 	private:
 		void CastGroundCheckRay();
@@ -85,6 +109,11 @@ namespace portal
 		glm::vec3 mMoveVelocity;             //< 移动速度
 		glm::vec3 mMoveDirection;            //< 累积每秒移动变量
 		bool mIsRunning;                     //< 是否在跑步
+
+		std::vector<PortalInfo> mPortalInfo;
+
+		bool mMouseLeftPressed = false;
+		bool mMouseRightPressed = false;
 	};
 }
 

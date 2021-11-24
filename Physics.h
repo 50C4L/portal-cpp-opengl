@@ -121,7 +121,6 @@ namespace portal
 				btDiscreteDynamicsWorld& mWorld;
 				Type mType;
 				physics::Callback mCallback;
-				bool mIsRigid;
 				std::unique_ptr<btRigidBody> mBody;
 				std::unique_ptr<btCollisionShape> mShape;
 			};
@@ -236,7 +235,7 @@ namespace portal
 			///
 			/// 发射射线
 			/// 
-			void CastRay( glm::vec3 from, glm::vec3 to, std::function<void(bool, glm::vec3)> callback = nullptr );
+			void CastRay( glm::vec3 from, glm::vec3 to, std::function<void(bool, glm::vec3, glm::vec3)> callback = nullptr );
 
 			void DebugRender();
 

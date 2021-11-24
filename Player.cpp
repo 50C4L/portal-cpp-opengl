@@ -1,5 +1,6 @@
 ﻿#include "Player.h"
 
+#include <iostream>
 #include "Camera.h"
 
 using namespace portal;
@@ -13,6 +14,9 @@ namespace
 	const float PLAYER_AIR_DAMPING = 0.1f;
 	const float PLAYER_MAX_VELOCITY = 20.f;
 	const float PLAYER_JUMP_FORCE = 2.f;
+
+	const size_t PORTAL_1 = 0;
+	const size_t PORTAL_2 = 1;
 
 	float clip( float n, float lower, float upper )
 	{
@@ -49,6 +53,8 @@ Player::Spawn( glm::vec3 position, std::shared_ptr<Camera> camera )
 	mCollisionCapsule->SetDamping( PLAYER_AIR_DAMPING, 0.f );
 	mIsActive = true;
 	mPreviousUpdateTime = std::chrono::steady_clock::now();
+	mPortalInfo.emplace_back( PortalInfo{} );
+	mPortalInfo.emplace_back( PortalInfo{} );
 }
 
 void
@@ -68,11 +74,7 @@ Player::Update()
 	mMainCamera->SetPosition( std::move( pos ) );
 
 	CastGroundCheckRay();
-	if( mIsGrounded )
-	{
-		mCollisionCapsule->SetDamping( mIsRunning ? 0.f : PLAYER_GROUND_DAMPING, 0.f );
-	}
-	else
+	if( !mIsGrounded && !mIsRunning )
 	{
 		mCollisionCapsule->SetDamping( PLAYER_AIR_DAMPING, 0.f );
 	}
@@ -115,6 +117,7 @@ Player::HandleKeys( std::unordered_map<unsigned int, bool>& key_map )
 
 		if( mIsRunning )
 		{
+			mCollisionCapsule->SetDamping( 0.f, 0.f );
 			mMoveDirection = mMoveDirection == glm::vec3{ 0.f } ? mMoveDirection :glm::normalize( mMoveDirection );
 			mMoveVelocity = mMoveDirection * PLAYER_MAX_VELOCITY;
 			mCollisionCapsule->SetLinearVelocity(
@@ -122,6 +125,58 @@ Player::HandleKeys( std::unordered_map<unsigned int, bool>& key_map )
 					mMoveVelocity.x,
 					mCollisionCapsule->GetLinearVelocity().y,
 					mMoveVelocity.z
+				}
+			);
+		}
+		else
+		{
+			//mCollisionCapsule->SetDamping( PLAYER_GROUND_DAMPING, 0.f );
+		}
+	}
+}
+
+void 
+Player::HandleMouse( std::unordered_map<int, bool>& button_map )
+{
+	if( mMouseLeftPressed != button_map[ 1 ] )
+	{
+		mMouseLeftPressed = button_map[ 1 ];
+		if( mMouseLeftPressed )
+		{
+			auto look_dir = mMainCamera->GetLookDirection();
+			look_dir *= 1000.f;
+			mPhysics.CastRay( 
+				mMainCamera->GetPosition(), look_dir,
+				[&, this]( bool is_hit, glm::vec3 hit_point, glm::vec3 hit_normal )
+				{
+					if( is_hit )
+					{
+						mPortalInfo[ PORTAL_1 ].is_active = true;
+						mPortalInfo[ PORTAL_1 ].position = hit_point;
+						mPortalInfo[ PORTAL_1 ].face_dir = hit_normal;
+					}
+				}
+			);
+		}
+	}
+
+	if( mMouseRightPressed != button_map[ 2 ] )
+	{
+		mMouseRightPressed = button_map[ 2 ];
+		if( mMouseRightPressed )
+		{
+			auto look_dir = mMainCamera->GetLookDirection();
+			look_dir *= 1000.f;
+			mPhysics.CastRay( 
+				mMainCamera->GetPosition(), look_dir,
+				[&, this]( bool is_hit, glm::vec3 hit_point, glm::vec3 hit_normal )
+				{
+					if( is_hit )
+					{
+						mPortalInfo[ PORTAL_2 ].is_active = true;
+						mPortalInfo[ PORTAL_2 ].position = hit_point;
+						mPortalInfo[ PORTAL_2 ].face_dir = hit_normal;
+					}
 				}
 			);
 		}
@@ -137,6 +192,12 @@ Player::Look( float yaw_angle, float pitch_angle )
 	}
 
 	mMainCamera->Look( yaw_angle, pitch_angle );
+}
+
+const std::vector<Player::PortalInfo>& 
+Player::GetPortalInfo() const
+{
+	return mPortalInfo;
 }
 
 void 
@@ -155,7 +216,7 @@ Player::CastGroundCheckRay()
 	to.y -= PLAYER_CAPSULE_HEIGHT / 2.f + PLAYER_CAPSULE_RAIDUS + 1.f;
 	mPhysics.CastRay( 
 		std::move( from ), std::move( to ),
-		[this]( bool is_hit, glm::vec3 /*hit_point*/ )
+		[this]( bool is_hit, glm::vec3, glm::vec3 )
 		{
 			mIsGrounded = is_hit;
 		}

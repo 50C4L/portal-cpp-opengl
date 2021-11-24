@@ -12,6 +12,9 @@
     <Filter Include="Source Files\physics">
       <UniqueIdentifier>{de829120-9d59-4b7b-a418-593fa3e7197e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\gameplay">
+      <UniqueIdentifier>{12b1c259-21be-4b96-be6e-bdbf648a424d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -29,14 +32,17 @@
     <ClCompile Include="ScenePrimitives.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Physics.cpp">
+      <Filter>Source Files\physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Player.cpp">
+      <Filter>Source Files\gameplay</Filter>
+    </ClCompile>
     <ClCompile Include="LevelController.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Player.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Physics.cpp">
-      <Filter>Source Files\physics</Filter>
+    <ClCompile Include="Portal.cpp">
+      <Filter>Source Files\gameplay</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -52,17 +58,20 @@
     <ClInclude Include="ScenePrimitives.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="LevelController.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Player.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="Physics.h">
       <Filter>Source Files\physics</Filter>
     </ClInclude>
     <ClInclude Include="DebugRenderer.h">
       <Filter>Source Files\physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>Source Files\gameplay</Filter>
+    </ClInclude>
+    <ClInclude Include="LevelController.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Portal.h">
+      <Filter>Source Files\gameplay</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

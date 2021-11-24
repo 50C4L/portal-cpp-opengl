@@ -109,6 +109,7 @@ namespace portal
 		/// 
 		void SetPosition( glm::vec3 pos );
 		glm::vec3 GetPosition();
+		glm::vec3 GetLookDirection();
 
 		///
 		/// 设置摄像机速度

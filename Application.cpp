@@ -15,8 +15,8 @@ using namespace portal;
 namespace
 {
 	// 默认窗口大小
-	constexpr int DEFAULT_WIDTH = 2560;
-	constexpr int DEFAULT_HEIGHT = 1440;
+	constexpr int DEFAULT_WIDTH = 1920;
+	constexpr int DEFAULT_HEIGHT = 1080;
 	constexpr unsigned int UPDATE_TIME = 17; // 游戏逻辑每秒更新60次, 16.66666ms间隔
 }
 
@@ -106,6 +106,16 @@ Application::GLUTKeyboardDownCallback( unsigned char key, int x, int y )
 	}
 }
 
+/*static*/ 
+void 
+Application::GLUTMousePressedCallback( int button, int state, int x, int y )
+{
+	if( sInstance ) 
+	{
+		sInstance->MousePresed( button, state == GLUT_DOWN );
+	}
+}
+
 Application::Application( Params params )
 	: mParams( params )
 	, mWindowWidth( DEFAULT_WIDTH )
@@ -116,6 +126,10 @@ Application::Application( Params params )
 	mKeyStatus.emplace( 's', false );
 	mKeyStatus.emplace( 'd', false );
 	mKeyStatus.emplace( ' ', false );
+
+	mMouseButtonState.emplace( 1, false );
+	mMouseButtonState.emplace( 2, false );
+	mMouseButtonState.emplace( 3, false );
 }
 
 bool
@@ -148,6 +162,7 @@ Application::Initialize()
 	// 鼠标设在窗口在中心
 	glutWarpPointer( mWindowWidth/2, mWindowHeight/2 );
 	glutPassiveMotionFunc( GLUTMouseMoveCallback );
+	glutMouseFunc( GLUTMousePressedCallback );
 
 	// 初始化渲染器
 	mRenderer = std::make_unique<Renderer>();
@@ -155,6 +170,8 @@ Application::Initialize()
 
 	// 加载资源
 	mRenderer->GetResources().LoadTexture( "resources/white_wall.jpg" );
+	mRenderer->GetResources().LoadTexture( "resources/blueportal.png" );
+	mRenderer->GetResources().LoadTexture( "resources/orangeportal.png" );
 	mLevelController = std::make_unique<LevelController>( *mRenderer );
 	mLevelController->Initialize( UPDATE_TIME );
 	if( mLevelController->LoadLevelFile( "resources/levels/level_intro.json" ) )
@@ -204,7 +221,7 @@ Application::MouseMoved( int x, int y )
 {
 	if( mLevelController )
 	{
-		mLevelController->HandleMouse( x, y );
+		mLevelController->HandleMouseMove( x, y );
 	}
 }
 
@@ -212,4 +229,28 @@ void
 Application::KeyChanged( unsigned char key, bool is_down )
 {
 	mKeyStatus[ key ] = is_down;
+}
+
+void 
+Application::MousePresed( int button, bool is_pressed )
+{
+	switch( button )
+	{
+	case GLUT_LEFT_BUTTON:
+		mMouseButtonState[ 1 ] = is_pressed;
+		break;
+	case GLUT_RIGHT_BUTTON:
+		mMouseButtonState[ 2 ] = is_pressed;
+		break;
+	case GLUT_MIDDLE_BUTTON:
+		mMouseButtonState[ 3 ] = is_pressed;
+		break;
+	default:
+		break;
+	}
+
+	if( mLevelController )
+	{
+		mLevelController->HandleMouseButton( mMouseButtonState );
+	}
 }

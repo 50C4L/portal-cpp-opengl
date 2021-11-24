@@ -1,6 +1,8 @@
 ﻿#include "Physics.h"
 #include "DebugRenderer.h"
 
+#include <bullet/BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
+
 using namespace portal;
 using namespace portal::physics;
 
@@ -185,18 +187,23 @@ Physics::CreateCapsule( glm::vec3 pos, float raidus, float height, PhysicsObject
 {
 	return std::make_unique<Physics::Capsule>( pos, raidus, height, *mWorld, type, std::move( callback ) );
 }
-
+ 
 void 
-Physics::CastRay( glm::vec3 from, glm::vec3 to, std::function<void(bool, glm::vec3)> callback )
+Physics::CastRay( glm::vec3 from, glm::vec3 to, std::function<void(bool, glm::vec3, glm::vec3)> callback )
 {
 	btVector3 from_v{ from.x, from.y, from.z };
 	btVector3 to_v{ to.x, to.y, to.z };
 	btCollisionWorld::ClosestRayResultCallback first_result( from_v, to_v );
+	first_result.m_flags |= btTriangleRaycastCallback::kF_FilterBackfaces;
 	mWorld->rayTest( from_v, to_v, first_result );
 
 	if( callback )
 	{
-		callback( first_result.hasHit(), { first_result.m_hitPointWorld.x(), first_result.m_hitPointWorld.y(), first_result.m_hitPointWorld.z() } );
+		callback( 
+			first_result.hasHit(), 
+			{ first_result.m_hitPointWorld.x(), first_result.m_hitPointWorld.y(), first_result.m_hitPointWorld.z() },
+			{ first_result.m_hitNormalWorld.x(), first_result.m_hitNormalWorld.y(), first_result.m_hitNormalWorld.z() }
+		);
 	}
 }
 

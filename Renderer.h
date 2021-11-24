@@ -68,6 +68,8 @@ namespace portal
 			/// 
 			unsigned int GetId() const;
 
+			void SetModelMatrix( const glm::mat4& matrix );
+
 			///
 			/// 设置视图矩阵
 			/// 
@@ -98,6 +100,7 @@ namespace portal
 		private:
 			bool mIsValid;
 			unsigned int mId;
+			int mModelMatUniformLocation;
 			int mViewMatUniformLocation;
 			int mProjectionMatUniformLocation;
 		};
@@ -138,9 +141,14 @@ namespace portal
 			/// 
 			int GetNumberOfVertices() const;
 
+			void Translate( glm::vec3 offset );
+
+			void Rotate( float angle, glm::vec3 axis );
+
 			std::string GetShaderName() const;
 			unsigned int GetTexture() const;
 			DrawType GetDrawType() const;
+			glm::mat4 GetTransform();
 
 		private:
 			unsigned int mVBO;
@@ -149,6 +157,10 @@ namespace portal
 			std::string mShader;
 			unsigned int mTexture;
 			DrawType mDrawType;
+			glm::vec3 mTranslation;
+			glm::vec3 mRotation;
+			glm::mat4 mTransform;
+			bool mIsDirty;
 		};
 
 		///
@@ -232,6 +244,8 @@ public:
 		///		Reference to Renderable
 		///
 		void AddToRenderQueue( Renderable* renderable_obj );
+
+		void RemoveFromRenderQueue( Renderable* renderable_obj );
 
 		///
 		/// 渲染!!!

@@ -9,6 +9,7 @@
 #include "ScenePrimitives.h"
 #include "Renderer.h"
 #include "Camera.h"
+#include "Portal.h"
 
 using namespace portal;
 using namespace portal::physics;
@@ -64,6 +65,9 @@ LevelController::Initialize( int update_interval_ms )
 {
 	mPhysics = std::make_unique<Physics>( mRenderer );
 	mPhysics->Initialize( update_interval_ms / 1000.f );
+
+	mPortals[0] = { false, std::make_unique<Portal>( Renderer::DEFAULT_SHADER, mRenderer.GetResources().GetTextureId( "resources/blueportal.png" ) ) };
+	mPortals[1] = { false, std::make_unique<Portal>( Renderer::DEFAULT_SHADER, mRenderer.GetResources().GetTextureId( "resources/orangeportal.png" ) ) };
 }
 
 bool 
@@ -196,6 +200,8 @@ LevelController::Update()
 	{
 		mPhysics->Update();
 	}
+
+	UpdatePortalState();
 }
 
 void 
@@ -205,7 +211,7 @@ LevelController::HandleKeys( std::unordered_map<unsigned int, bool>& key_map )
 }
 
 void 
-LevelController::HandleMouse( int x, int y )
+LevelController::HandleMouseMove( int x, int y )
 {
 	float x_offset = static_cast<float>( x - mMouseX );
 	float y_offset = static_cast<float>( mMouseY - y );
@@ -216,6 +222,13 @@ LevelController::HandleMouse( int x, int y )
 	x_offset *= sensitivitiy;
 	y_offset *= sensitivitiy;
 	mPlayer->Look( x_offset, y_offset );
+	
+}
+
+void 
+LevelController::HandleMouseButton( std::unordered_map<int, bool>& button_map )
+{
+	mPlayer->HandleMouse( button_map );
 }
 
 void
@@ -224,5 +237,21 @@ LevelController::RenderDebugInfo()
 	if( mPhysics )
 	{
 		mPhysics->DebugRender();
+	}
+}
+
+void
+LevelController::UpdatePortalState()
+{
+	const auto& portal_info = mPlayer->GetPortalInfo();
+	for( int i = 0; i < portal_info.size(); i++ )
+	{
+		if( portal_info[i].is_active && mPortals[i].portal->UpdatePosition( portal_info[i].position, portal_info[i].face_dir ) )
+		{
+			mRenderer.RemoveFromRenderQueue( mPortals[i].portal.get() );
+			mRenderer.AddToRenderQueue( mPortals[i].portal.get() );
+		}
+		// TODO check portal position
+		mPortals[i].is_active = true;
 	}
 }
