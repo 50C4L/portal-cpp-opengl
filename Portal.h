@@ -2,6 +2,7 @@
 #define _PORTAL_H
 
 #include "Renderer.h"
+#include "Camera.h"
 
 namespace portal
 {
@@ -11,7 +12,7 @@ namespace portal
 	class Portal
 	{
 	public:
-		Portal( unsigned int texture );
+		Portal( unsigned int texture, float view_width, float view_height );
 		~Portal();
 
 		bool UpdatePosition( glm::vec3 pos, glm::vec3 dir );
@@ -25,6 +26,7 @@ namespace portal
 		glm::vec3 mOriginFaceDir;
 		Renderer::Renderable mFrameRenderable;
 		Renderer::Renderable mHoleRenderable;
+		Camera mCamera;
 	};
 }
 

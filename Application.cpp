@@ -169,9 +169,9 @@ Application::Initialize()
 	mRenderer->ResizeViewport( { mWindowWidth, mWindowHeight } );
 
 	// 加载资源
-	mRenderer->GetResources().LoadTexture( "resources/white_wall.jpg" );
-	mRenderer->GetResources().LoadTexture( "resources/blueportal.png" );
-	mRenderer->GetResources().LoadTexture( "resources/orangeportal.png" );
+	mRenderer->GetResources().LoadTexture( "resources/textures/white_wall.jpg" );
+	mRenderer->GetResources().LoadTexture( "resources/textures/blueportal.png" );
+	mRenderer->GetResources().LoadTexture( "resources/textures/orangeportal.png" );
 	mLevelController = std::make_unique<LevelController>( *mRenderer );
 	mLevelController->Initialize( UPDATE_TIME );
 	if( mLevelController->LoadLevelFile( "resources/levels/level_intro.json" ) )
@@ -201,7 +201,9 @@ Application::Update()
 void
 Application::Render()
 {
-	mRenderer->Render();
+	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	mLevelController->RenderScene();
 	mLevelController->RenderDebugInfo();
 }
 

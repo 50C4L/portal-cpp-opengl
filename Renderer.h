@@ -281,25 +281,8 @@ public:
 		glm::ivec2 GetViewportSize();
 
 		///
-		/// 将提供的Renderable引用加入到渲染队列
-		/// 
-		/// @param renderable_obj
-		///		Reference to Renderable
-		///
-		void AddToRenderQueue( Renderable* renderable_obj );
-
-		///
-		/// 从渲染队列中移除Renderable
-		/// 
-		/// @param renderable_obj
-		///		Reference to Renderable
-		///
-		void RemoveFromRenderQueue( Renderable* renderable_obj );
-
-		///
 		/// 渲染!!!
 		/// 
-		void Render();
 		void RenderOneoff( Renderable* renderable_obj );
 
 		///
@@ -317,7 +300,6 @@ public:
 		glm::mat4 mProjectionMatrix;
 
 		std::unique_ptr<Resources> mResources;
-		std::list<Renderable*> mRenderableList;
 
 		glm::ivec2 mViewportSize;
 	};

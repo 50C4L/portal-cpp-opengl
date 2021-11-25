@@ -487,36 +487,6 @@ Renderer::GetViewportSize()
 	return mViewportSize;
 }
 
-void
-Renderer::AddToRenderQueue( Renderable* renderable_obj )
-{
-	if( renderable_obj )
-	{
-		mRenderableList.emplace_back( std::move( renderable_obj ) );
-	}
-}
-
-void 
-Renderer::RemoveFromRenderQueue( Renderable* renderable_obj )
-{
-	if( renderable_obj )
-	{
-		mRenderableList.remove( renderable_obj );
-	}
-}
-
-void 
-Renderer::Render()
-{
-	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
-	for( auto& renderable : mRenderableList )
-	{
-		RenderOneoff( renderable );
-	}
-}
-
 void 
 Renderer::RenderOneoff( Renderable* renderable_obj )
 {

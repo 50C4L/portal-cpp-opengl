@@ -65,9 +65,6 @@ LevelController::Initialize( int update_interval_ms )
 {
 	mPhysics = std::make_unique<Physics>( mRenderer );
 	mPhysics->Initialize( update_interval_ms / 1000.f );
-
-	mPortals[0] = { false, std::make_unique<Portal>( mRenderer.GetResources().GetTextureId( "resources/blueportal.png" ) ) };
-	mPortals[1] = { false, std::make_unique<Portal>( mRenderer.GetResources().GetTextureId( "resources/orangeportal.png" ) ) };
 }
 
 bool 
@@ -162,17 +159,23 @@ LevelController::ChangeLevelTo( const std::string& path )
 		std::cerr << "ERROR: Failed to change to level " << path << ", level is not loaded." << std::endl;
 		return;
 	}
-	
+
 	// TODO: Release the previous level
+	mCurrentLevel = itr->second.get();
 
 	// 改变玩家出生点
 	auto view_size = mRenderer.GetViewportSize();
-	mMainCamera = std::make_shared<Camera>( static_cast<float>( view_size.x ), static_cast<float>( view_size.y ), Camera::Type::FPS );
+	const float view_width = static_cast<float>( view_size.x );
+	const float view_height = static_cast<float>( view_size.y );
+	mMainCamera = std::make_shared<Camera>( view_width, view_height, Camera::Type::FPS );
 	mPlayer = std::make_unique<Player>( *mPhysics );
 	mPlayer->Spawn( { 0.f, 20.f, 0.f }, mMainCamera );
 
-	// 把关卡加入到渲染队列
-	auto& walls = itr->second->GetWalls();
+	mPortals[0] = { false, std::make_unique<Portal>( mRenderer.GetResources().GetTextureId( "resources/textures/blueportal.png" ), view_width, view_height ) };
+	mPortals[1] = { false, std::make_unique<Portal>( mRenderer.GetResources().GetTextureId( "resources/textures/orangeportal.png" ), view_width, view_height ) };
+
+	// 根据关卡数据生成静态物体
+	auto& walls = mCurrentLevel->GetWalls();
 	for( auto& wall : walls )
 	{
 		wall.render_instance = std::make_unique<SceneBox>(
@@ -184,7 +187,6 @@ LevelController::ChangeLevelTo( const std::string& path )
 			mRenderer.GetResources().GetTextureId( wall.texture_path )
 		);
 		wall.mCollisionBox = mPhysics->CreateBox( wall.position, { wall.width, wall.height, wall.depth }, Physics::PhysicsObject::Type::STATIC );
-		mRenderer.AddToRenderQueue( wall.render_instance.get() );
 	}
 	mRenderer.SetCameraAsActive( mMainCamera );
 }
@@ -222,13 +224,30 @@ LevelController::HandleMouseMove( int x, int y )
 	x_offset *= sensitivitiy;
 	y_offset *= sensitivitiy;
 	mPlayer->Look( x_offset, y_offset );
-	
 }
 
 void 
 LevelController::HandleMouseButton( std::unordered_map<int, bool>& button_map )
 {
 	mPlayer->HandleMouse( button_map );
+}
+
+void
+LevelController::RenderScene()
+{
+	auto& walls = mCurrentLevel->GetWalls();
+	for( auto& wall : walls )
+	{
+		mRenderer.RenderOneoff( wall.render_instance.get() );
+	}
+	for( auto& portal : mPortals )
+	{
+		if( portal.is_active )
+		{
+			mRenderer.RenderOneoff( portal.portal->GetHoleRenderable() );
+			mRenderer.RenderOneoff( portal.portal->GetFrameRenderable() );
+		}
+	}
 }
 
 void
@@ -246,14 +265,7 @@ LevelController::UpdatePortalState()
 	const auto& portal_info = mPlayer->GetPortalInfo();
 	for( int i = 0; i < portal_info.size(); i++ )
 	{
-		if( portal_info[i].is_active && mPortals[i].portal->UpdatePosition( portal_info[i].position, portal_info[i].face_dir ) )
-		{
-			mRenderer.RemoveFromRenderQueue( mPortals[i].portal->GetHoleRenderable() );
-			mRenderer.RemoveFromRenderQueue( mPortals[i].portal->GetFrameRenderable() );
-			mRenderer.AddToRenderQueue( mPortals[i].portal->GetHoleRenderable() );
-			mRenderer.AddToRenderQueue( mPortals[i].portal->GetFrameRenderable() );
-		}
-		// TODO check portal position
-		mPortals[i].is_active = true;
+		mPortals[i].is_active = portal_info[i].is_active;
+		mPortals[i].portal->UpdatePosition( portal_info[i].position, portal_info[i].face_dir );
 	}
 }

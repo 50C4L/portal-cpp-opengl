@@ -73,6 +73,7 @@ namespace portal
 		void HandleMouseMove( int x, int y );
 		void HandleMouseButton( std::unordered_map<int, bool>& button_map );
 
+		void RenderScene();
 		void RenderDebugInfo();
 
 	private:
@@ -86,6 +87,7 @@ namespace portal
 		int mMouseX;
 		int mMouseY;
 		PortalState mPortals[2];
+		Level* mCurrentLevel;
 	};
 }
 

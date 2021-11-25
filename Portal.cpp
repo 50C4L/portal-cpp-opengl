@@ -53,12 +53,13 @@ namespace
 	}
 }
 
-Portal::Portal( unsigned int texture )
+Portal::Portal( unsigned int texture, float view_width, float view_height )
 	: mFaceDir( 0.f, 0.f, 1.f )
 	, mPosition( 0.f, 0.f, 0.f )
 	, mOriginFaceDir( 0.f, 0.f, 1.f )
 	, mFrameRenderable( generate_portal_mesh(), Renderer::PORTAL_FRAME_SHADER, texture )
 	, mHoleRenderable( generate_portal_ellipse_hole( 3.8f, 6.8f ), Renderer::PORTAL_HOLE_SHADER, 0, Renderer::Renderable::DrawType::TRIANGLE_FANS )
+	, mCamera( view_width, view_height, Camera::Type::FPS )
 {}
 
 Portal::~Portal()

@@ -5,7 +5,7 @@
     "z": 0.0
   },
   "Walls": {
-    "texture": "resources/white_wall.jpg",
+    "texture": "resources/textures/white_wall.jpg",
     "shader": "DEFLAULT_SHADER",
     "build": {
       "floor": {
