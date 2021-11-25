@@ -10,19 +10,21 @@ using namespace portal;
 
 namespace
 {
-	const float PORTAL_WIDTH = 15.f;
-	const float PORTAL_HEIGHT = 16.f;
+	const float PORTAL_FRAME_WIDTH = 19.f;
+	const float PORTAL_FRAME_HEIGHT = 16.f;
+	const float PORTAL_GUT_WIDTH = 4.5f;
+	const float PORTAL_GUT_HEIGHT = 6.8f;
 
 	std::vector<Vertex>
 	generate_portal_frame()
 	{
 		return {
-			{ { -PORTAL_WIDTH / 2.f, -PORTAL_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 0.f, 0.f }, { 0.f, 0.f, 1.f } },
-			{ { -PORTAL_WIDTH / 2.f,  PORTAL_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 0.f, 1.f }, { 0.f, 0.f, 1.f } },
-			{ { PORTAL_WIDTH / 2.f,  -PORTAL_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 1.f, 0.f }, { 0.f, 0.f, 1.f } },
-			{ { PORTAL_WIDTH / 2.f,  -PORTAL_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 1.f, 0.f }, { 0.f, 0.f, 1.f } },
-			{ { -PORTAL_WIDTH / 2.f,  PORTAL_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 0.f, 1.f }, { 0.f, 0.f, 1.f } },
-			{ { PORTAL_WIDTH / 2.f,   PORTAL_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 1.f, 1.f }, { 0.f, 0.f, 1.f } },
+			{ { -PORTAL_FRAME_WIDTH / 2.f, -PORTAL_FRAME_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 0.f, 0.f }, { 0.f, 0.f, 1.f } },
+			{ { -PORTAL_FRAME_WIDTH / 2.f,  PORTAL_FRAME_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 0.f, 1.f }, { 0.f, 0.f, 1.f } },
+			{ { PORTAL_FRAME_WIDTH / 2.f,  -PORTAL_FRAME_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 1.f, 0.f }, { 0.f, 0.f, 1.f } },
+			{ { PORTAL_FRAME_WIDTH / 2.f,  -PORTAL_FRAME_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 1.f, 0.f }, { 0.f, 0.f, 1.f } },
+			{ { -PORTAL_FRAME_WIDTH / 2.f,  PORTAL_FRAME_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 0.f, 1.f }, { 0.f, 0.f, 1.f } },
+			{ { PORTAL_FRAME_WIDTH / 2.f,   PORTAL_FRAME_HEIGHT / 2.f, 0.f }, { 1.f, 1.f, 1.f, 1.f }, { 1.f, 1.f }, { 0.f, 0.f, 1.f } },
 		};
 	}
 
@@ -58,7 +60,7 @@ Portal::Portal( unsigned int texture, float view_width, float view_height )
 	, mPosition( 0.f, 0.f, 0.f )
 	, mOriginFaceDir( 0.f, 0.f, 1.f )
 	, mFrameRenderable( generate_portal_frame(), Renderer::PORTAL_FRAME_SHADER, texture )
-	, mHoleRenderable( generate_portal_ellipse_hole( 3.8f, 6.8f ), Renderer::PORTAL_HOLE_SHADER, 0, Renderer::Renderable::DrawType::TRIANGLE_FANS )
+	, mHoleRenderable( generate_portal_ellipse_hole( PORTAL_GUT_WIDTH, PORTAL_GUT_HEIGHT ), Renderer::PORTAL_HOLE_SHADER, 0, Renderer::Renderable::DrawType::TRIANGLE_FANS )
 	, mCamera( view_width, view_height, Camera::Type::FREE, mPosition, mOriginFaceDir, mOriginFaceDir )
 	, mHasBeenPlaced( false )
 	, mPairedPortal( nullptr )
