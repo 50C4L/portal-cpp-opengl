@@ -6,9 +6,25 @@
 using namespace portal;
 
 Camera::Camera( float view_width, float view_height, Type type )
-	: mPosition( 0.f, 10.f, 1.f )
-	, mCameraFrontDirection( 0.f, 0.f, -1.f )
-	, mCameraLookDirection( 0.f, 0.f, -1.f )
+	: Camera(
+		view_width,
+		view_height,
+		type,
+		{ 0.f, 10.f, 1.f },
+		{ 0.f, 0.f, -1.f },
+		{ 0.f, 0.f, -1.f }
+	)
+{}
+
+Camera::Camera( float view_width,
+				float view_height,
+				Type type,
+				glm::vec3 position,
+				glm::vec3 look_dir,
+				glm::vec3 front_dir )
+	: mPosition( std::move( position ) )
+	, mCameraFrontDirection( std::move( front_dir ) )
+	, mCameraLookDirection( std::move( look_dir ) )
 	, mCameraUpDirection( 0.f, 1.f, 0.f )
 	, mCameraRightDirection( glm::normalize( glm::cross( mCameraFrontDirection, mCameraUpDirection ) ) )
 	, mAspectRatio( view_width / view_height )
@@ -20,8 +36,7 @@ Camera::Camera( float view_width, float view_height, Type type )
 	, mYawAngle( 0.f )
 	, mPitchAngle( 0.f )
 	, mType( type )
-{
-}
+{}
 
 Camera::~Camera()
 {}
@@ -122,12 +137,6 @@ Camera::Look( float yaw_angle, float pitch_angle )
 	}
 	// 更新右边方向
 	mCameraRightDirection = glm::normalize( glm::cross( mCameraFrontDirection, mCameraUpDirection ) );
-}
-
-void 
-Camera::Translate( glm::vec3 offset )
-{
-	mPosition += offset;
 }
 
 void 

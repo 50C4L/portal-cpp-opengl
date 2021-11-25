@@ -22,6 +22,8 @@ namespace portal
 
 		glm::vec3 mFaceDir;
 		glm::vec3 mPosition;
+
+		Camera* GetCamera();
 	private:
 		glm::vec3 mOriginFaceDir;
 		Renderer::Renderable mFrameRenderable;

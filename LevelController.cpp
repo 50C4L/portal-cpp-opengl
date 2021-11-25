@@ -188,7 +188,7 @@ LevelController::ChangeLevelTo( const std::string& path )
 		);
 		wall.mCollisionBox = mPhysics->CreateBox( wall.position, { wall.width, wall.height, wall.depth }, Physics::PhysicsObject::Type::STATIC );
 	}
-	mRenderer.SetCameraAsActive( mMainCamera );
+	mRenderer.SetCameraAsActive( mMainCamera.get() );
 }
 
 void
@@ -248,6 +248,8 @@ LevelController::RenderScene()
 			mRenderer.RenderOneoff( portal.portal->GetFrameRenderable() );
 		}
 	}
+
+	RenderDebugInfo();
 }
 
 void

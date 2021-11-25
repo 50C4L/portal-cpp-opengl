@@ -45,6 +45,12 @@ namespace portal
 		///		摄像机种类
 		/// 
 		Camera( float view_width, float view_height, Type type );
+		Camera( float view_width, 
+				float view_height, 
+				Type type,
+				glm::vec3 position,
+				glm::vec3 look_dir,
+				glm::vec3 front_dir );
 		~Camera();
 
 		///
@@ -92,14 +98,6 @@ namespace portal
 		///		水平角度
 		/// 
 		void Look( float yaw_angle, float pitch_angle );
-
-		///
-		/// 移动摄像机位置
-		/// 
-		/// @param offset
-		///		空间移动的量
-		/// 
-		void Translate( glm::vec3 offset );
 
 		///
 		/// 把摄像机移动到指定点

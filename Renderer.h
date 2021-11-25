@@ -289,14 +289,14 @@ public:
 		/// 将提供的摄像机作为之后渲染的摄像机
 		/// 
 		/// @param camera
-		///		Shared pointer to Camera
+		///		Raw pointer to Camera
 		/// 
-		void SetCameraAsActive( std::shared_ptr<Camera> camera );
+		void SetCameraAsActive( Camera* camera );
 
 		Resources& GetResources();
 
 	private:
-		std::shared_ptr<Camera> mActiveCamera;
+		Camera* mActiveCamera;
 		glm::mat4 mProjectionMatrix;
 
 		std::unique_ptr<Resources> mResources;

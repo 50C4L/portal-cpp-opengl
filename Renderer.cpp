@@ -512,7 +512,7 @@ Renderer::RenderOneoff( Renderable* renderable_obj )
 }
 
 void 
-Renderer::SetCameraAsActive( std::shared_ptr<Camera> camera )
+Renderer::SetCameraAsActive( Camera* camera )
 {
 	mActiveCamera = camera;
 	mProjectionMatrix = mActiveCamera->GetProjectionMatrix();
