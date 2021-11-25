@@ -14,6 +14,12 @@
 using namespace portal;
 using namespace portal::physics;
 
+namespace
+{
+	constexpr int PORTAL_1 = 0;
+	constexpr int PORTAL_2 = 1;
+}
+
 ///
 /// Level class implementations
 /// 
@@ -171,8 +177,10 @@ LevelController::ChangeLevelTo( const std::string& path )
 	mPlayer = std::make_unique<Player>( *mPhysics );
 	mPlayer->Spawn( { 0.f, 20.f, 0.f }, mMainCamera );
 
-	mPortals[0] = { false, std::make_unique<Portal>( mRenderer.GetResources().GetTextureId( "resources/textures/blueportal.png" ), view_width, view_height ) };
-	mPortals[1] = { false, std::make_unique<Portal>( mRenderer.GetResources().GetTextureId( "resources/textures/orangeportal.png" ), view_width, view_height ) };
+	mPortals[PORTAL_1] = std::make_unique<Portal>( mRenderer.GetResources().GetTextureId( "resources/textures/blueportal.png" ), view_width, view_height );
+	mPortals[PORTAL_2] = std::make_unique<Portal>( mRenderer.GetResources().GetTextureId( "resources/textures/orangeportal.png" ), view_width, view_height );
+	mPortals[PORTAL_1]->SetPair( mPortals[PORTAL_2].get(), mMainCamera.get() );
+	mPortals[PORTAL_2]->SetPair( mPortals[PORTAL_1].get(), mMainCamera.get() );
 
 	// 根据关卡数据生成静态物体
 	auto& walls = mCurrentLevel->GetWalls();
@@ -235,20 +243,26 @@ LevelController::HandleMouseButton( std::unordered_map<int, bool>& button_map )
 void
 LevelController::RenderScene()
 {
+	if( mPortals[ PORTAL_1 ]->IsLinkActive() )
+	{
+		mRenderer.RenderOneoff( mPortals[ PORTAL_1 ]->GetHoleRenderable() );
+		mRenderer.RenderOneoff( mPortals[ PORTAL_2 ]->GetHoleRenderable() );
+	}
+
+	// 绘制除了“真传送门”以外的场景
 	auto& walls = mCurrentLevel->GetWalls();
 	for( auto& wall : walls )
 	{
 		mRenderer.RenderOneoff( wall.render_instance.get() );
 	}
+	// 绘制传送门的框
 	for( auto& portal : mPortals )
 	{
-		if( portal.is_active )
+		if( portal->HasBeenPlaced() )
 		{
-			mRenderer.RenderOneoff( portal.portal->GetHoleRenderable() );
-			mRenderer.RenderOneoff( portal.portal->GetFrameRenderable() );
+			mRenderer.RenderOneoff( portal->GetFrameRenderable() );
 		}
 	}
-
 	RenderDebugInfo();
 }
 
@@ -267,7 +281,9 @@ LevelController::UpdatePortalState()
 	const auto& portal_info = mPlayer->GetPortalInfo();
 	for( int i = 0; i < portal_info.size(); i++ )
 	{
-		mPortals[i].is_active = portal_info[i].is_active;
-		mPortals[i].portal->UpdatePosition( portal_info[i].position, portal_info[i].face_dir );
+		if( portal_info[i].is_active )
+		{
+			mPortals[i]->UpdatePosition( portal_info[i].position, portal_info[i].face_dir );
+		}
 	}
 }

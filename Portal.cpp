@@ -60,10 +60,20 @@ Portal::Portal( unsigned int texture, float view_width, float view_height )
 	, mFrameRenderable( generate_portal_frame(), Renderer::PORTAL_FRAME_SHADER, texture )
 	, mHoleRenderable( generate_portal_ellipse_hole( 3.8f, 6.8f ), Renderer::PORTAL_HOLE_SHADER, 0, Renderer::Renderable::DrawType::TRIANGLE_FANS )
 	, mCamera( view_width, view_height, Camera::Type::FREE, mPosition, mOriginFaceDir, mOriginFaceDir )
+	, mHasBeenPlaced( false )
+	, mPairedPortal( nullptr )
+	, mPlayerCamera( nullptr )
 {}
 
 Portal::~Portal()
 {}
+
+void 
+Portal::SetPair( Portal* paired_portal, Camera* player_camera )
+{
+	mPairedPortal = paired_portal;
+	mPlayerCamera = player_camera;
+}
 
 bool 
 Portal::UpdatePosition( glm::vec3 pos, glm::vec3 dir )
@@ -87,6 +97,8 @@ Portal::UpdatePosition( glm::vec3 pos, glm::vec3 dir )
 	mHoleRenderable.Translate( pos + mFaceDir * 0.1f );
 	mHoleRenderable.Rotate( theta, cross_product );
 
+	mHasBeenPlaced = true;
+
 	return true;
 }
 
@@ -106,4 +118,20 @@ Camera*
 Portal::GetCamera()
 {
 	return &mCamera;
+}
+
+bool 
+Portal::HasBeenPlaced()
+{
+	return mHasBeenPlaced;
+}
+
+bool
+Portal::IsLinkActive()
+{
+	if( mPairedPortal && mPlayerCamera )
+	{
+		return mHasBeenPlaced && mPairedPortal->HasBeenPlaced();
+	}
+	return false;
 }
