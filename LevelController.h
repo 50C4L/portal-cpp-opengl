@@ -74,7 +74,7 @@ namespace portal
 		void UpdatePortalState();
 
 		void RenderPortals( Camera* camera, int current_recursion_level = 0 );
-		void RenderBaseScene();
+		void RenderBaseScene( Camera* camera );
 
 		Renderer& mRenderer;
 		std::unique_ptr<physics::Physics> mPhysics;

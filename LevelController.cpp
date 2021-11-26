@@ -19,7 +19,7 @@ namespace
 {
 	constexpr int PORTAL_1 = 0;
 	constexpr int PORTAL_2 = 1;
-	const int MAX_PORTAL_RECURSION = 2;
+	const int MAX_PORTAL_RECURSION = 4;
 }
 
 ///
@@ -251,9 +251,7 @@ LevelController::RenderScene()
 	}
 	else
 	{
-		mRenderer.SetCameraAsActive( mMainCamera.get() );
-		RenderBaseScene();
-		RenderDebugInfo();
+		RenderBaseScene( mMainCamera.get() );
 	}
 }
 
@@ -297,7 +295,7 @@ LevelController::RenderPortals( Camera* camera, int current_recursion_level )
 		// 测试不同通过的像素模板值+1，其他情况保持原有值
 		glStencilOp( GL_INCR, GL_KEEP, GL_KEEP );
 		// 表示每个像素8位的模板值都可用（就是传送门最多可以嵌套255次)
-		glStencilMask(0xFF);
+		glStencilMask( 0xFF );
 
 		// 绘制传送门窗口
 		// 比如这里时current_recursion_level = 0第一层
@@ -307,63 +305,96 @@ LevelController::RenderPortals( Camera* camera, int current_recursion_level )
 		mRenderer.SetCameraAsActive( camera );
 		mRenderer.RenderOneoff( portal->GetHoleRenderable() );
 
+		// TODO: 假设摄像机已经穿过了这个传送门
+		Camera* paired_portal_camera = portal->GetPairedPortal()->GetCamera();
+
+		// 这是最底层了，渲染最底层的传送门内容
 		if( current_recursion_level == MAX_PORTAL_RECURSION )
 		{
+			// 允许颜色和深度写入
+			glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
+			glDepthMask( GL_TRUE );
+
+			// 清理深度缓存
+			// 开启深度测试
+			glClear( GL_DEPTH_BUFFER_BIT );
+			glEnable( GL_DEPTH_TEST );
+
+			// 开启模板测试，确保我们只在传送门内绘制
+			glEnable( GL_STENCIL_TEST );
+			// 不再允许对模板进行写入
+			glStencilMask( 0x00 );
+			// 只对通过模板测试（current_recursion_level + 1)的像素进行绘制
+			glStencilFunc( GL_EQUAL, current_recursion_level + 1, 0xFF );
+
+			// 以配对的传送门的视角渲染场景
+			RenderBaseScene( paired_portal_camera );
 		}
 		else
 		{
+			// 如果这还不是最底层，我们进行递归
+			// 把这个传送门配对传送门的摄像机传到递归函数中进行绘制，并且将递归层数+1确保递归会结束
+			RenderPortals( paired_portal_camera, current_recursion_level + 1 );
+		}
+
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+		glDepthMask(GL_FALSE);
+
+		glEnable(GL_STENCIL_TEST);
+		glStencilMask(0xFF);
+
+		// 上面渲染的传送门内部会不通过这个模板测试
+		glStencilFunc( GL_NOTEQUAL, current_recursion_level + 1, 0xFF );
+
+		// 不通过测试的像素模板值会-1，直到退回到递归最高层时我们最终的模板缓存会全部变为0
+		glStencilOp( GL_DECR, GL_KEEP, GL_KEEP );
+
+		mRenderer.SetCameraAsActive( camera );
+		for( auto& portal : mPortals )
+		{
+			mRenderer.RenderOneoff( portal->GetHoleRenderable() );
 		}
 	}
-	// Disable the stencil test and stencil writing
-	glDisable(GL_STENCIL_TEST);
-	glStencilMask(0x00);
+	
+	// 关闭模板测试和颜色写入
+	glDisable( GL_STENCIL_TEST );
+	glStencilMask( 0x00 );
+	glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
 
-	// Disable color writing
-	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	// 开启深度测试和颜色写入
+	glEnable( GL_DEPTH_TEST );
+	glDepthMask( GL_TRUE );
 
-	// Enable the depth test, and depth writing.
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
+	// 深度测试设置为通过，也就是所有东西都会被写入到深度缓存里
+	glDepthFunc( GL_ALWAYS );
+	glClear( GL_DEPTH_BUFFER_BIT );
 
-	// Make sure we always write the data into the buffer
-	glDepthFunc(GL_ALWAYS);
-
-	// Clear the depth buffer
-	glClear(GL_DEPTH_BUFFER_BIT);
-
-	// Draw portals into depth buffer
+	// 将两个传送门的窗口写入到深度缓存
 	mRenderer.SetCameraAsActive( camera );
 	for( auto& portal : mPortals )
 	{
 		mRenderer.RenderOneoff( portal->GetHoleRenderable() );
 	}
+	// 将深度测试设回默认（近的挡住远的）
+	glDepthFunc( GL_LESS );
 
-	// Reset the depth function to the default
-	glDepthFunc(GL_LESS);
-
-	// Enable stencil test and disable writing to stencil buffer
+	// 开启模板测试，关闭对模板缓存的写入
 	glEnable(GL_STENCIL_TEST);
 	glStencilMask(0x00);
+	glStencilFunc( GL_LEQUAL, current_recursion_level, 0xFF );
 
-	// Draw at stencil >= recursionlevel
-	// which is at the current level or higher (more to the inside)
-	// This basically prevents drawing on the outside of this level.
-	glStencilFunc(GL_LEQUAL, current_recursion_level, 0xFF);
-
-	// Enable color and depth drawing again
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	glDepthMask(GL_TRUE);
-
-	// And enable the depth test
+	// 一切恢复正常
+	glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
+	glDepthMask( GL_TRUE );
 	glEnable(GL_DEPTH_TEST);
-
-	// Draw scene objects normally, only at recursionLevel
-	RenderBaseScene();
+	// 绘制正常的场景
+	RenderBaseScene( camera );
 }
 
 void 
-LevelController::RenderBaseScene()
+LevelController::RenderBaseScene( Camera* camera )
 {
+	mRenderer.SetCameraAsActive( camera );
 	// 绘制除了“真传送门”以外的场景
 	auto& walls = mCurrentLevel->GetWalls();
 	for( auto& wall : walls )
@@ -378,4 +409,5 @@ LevelController::RenderBaseScene()
 			mRenderer.RenderOneoff( portal->GetFrameRenderable() );
 		}
 	}
+	RenderDebugInfo();
 }
