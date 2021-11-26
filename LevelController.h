@@ -73,6 +73,9 @@ namespace portal
 		void RenderDebugInfo();
 		void UpdatePortalState();
 
+		void RenderPortals( Camera* camera, int current_recursion_level = 0 );
+		void RenderBaseScene();
+
 		Renderer& mRenderer;
 		std::unique_ptr<physics::Physics> mPhysics;
 		std::unordered_map<std::string, std::unique_ptr<Level>> mLevels;

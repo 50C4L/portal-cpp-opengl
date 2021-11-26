@@ -1,5 +1,6 @@
 ﻿#include "LevelController.h"
 
+#include <GL/glew.h>
 #include <rapidjson/document.h>
 #include <rapidjson/istreamwrapper.h>
 #include <string>
@@ -18,6 +19,7 @@ namespace
 {
 	constexpr int PORTAL_1 = 0;
 	constexpr int PORTAL_2 = 1;
+	const int MAX_PORTAL_RECURSION = 2;
 }
 
 ///
@@ -245,25 +247,14 @@ LevelController::RenderScene()
 {
 	if( mPortals[ PORTAL_1 ]->IsLinkActive() )
 	{
-		mRenderer.RenderOneoff( mPortals[ PORTAL_1 ]->GetHoleRenderable() );
-		mRenderer.RenderOneoff( mPortals[ PORTAL_2 ]->GetHoleRenderable() );
+		RenderPortals( mMainCamera.get() );
 	}
-
-	// 绘制除了“真传送门”以外的场景
-	auto& walls = mCurrentLevel->GetWalls();
-	for( auto& wall : walls )
+	else
 	{
-		mRenderer.RenderOneoff( wall.render_instance.get() );
+		mRenderer.SetCameraAsActive( mMainCamera.get() );
+		RenderBaseScene();
+		RenderDebugInfo();
 	}
-	// 绘制传送门的框
-	for( auto& portal : mPortals )
-	{
-		if( portal->HasBeenPlaced() )
-		{
-			mRenderer.RenderOneoff( portal->GetFrameRenderable() );
-		}
-	}
-	RenderDebugInfo();
 }
 
 void
@@ -284,6 +275,107 @@ LevelController::UpdatePortalState()
 		if( portal_info[i].is_active )
 		{
 			mPortals[i]->UpdatePosition( portal_info[i].position, portal_info[i].face_dir );
+		}
+	}
+}
+
+void 
+LevelController::RenderPortals( Camera* camera, int current_recursion_level )
+{
+	for( auto& portal : mPortals )
+	{
+		// 关闭颜色和深度缓存写入
+		glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
+		glDepthMask( GL_FALSE );
+		glDisable( GL_DEPTH_TEST );
+
+		// 开启模板测试，确保传送门的内容只画在传送门里面
+		glEnable( GL_DEPTH_TEST );
+		// 设置模板测试为：
+		// 当模板像素值不等于current_recursion_level时，测试通过
+		glStencilFunc( GL_NOTEQUAL, current_recursion_level, 0xFF );
+		// 测试不同通过的像素模板值+1，其他情况保持原有值
+		glStencilOp( GL_INCR, GL_KEEP, GL_KEEP );
+		// 表示每个像素8位的模板值都可用（就是传送门最多可以嵌套255次)
+		glStencilMask(0xFF);
+
+		// 绘制传送门窗口
+		// 比如这里时current_recursion_level = 0第一层
+		// 屏幕上传送门窗口覆盖的位置会因为规则 glStencilFunc( GL_NOTEQUAL, current_recursion_level, 0xFF )
+		// 不通过测试，因此它所覆盖的像素模板值会根据 glStencilOp( GL_INCR, GL_KEEP, GL_KEEP ) 进行current_recursion_level+1
+		// 结果是模板缓存中除了传送门窗口的像素是1，其他都是0
+		mRenderer.SetCameraAsActive( camera );
+		mRenderer.RenderOneoff( portal->GetHoleRenderable() );
+
+		if( current_recursion_level == MAX_PORTAL_RECURSION )
+		{
+		}
+		else
+		{
+		}
+	}
+	// Disable the stencil test and stencil writing
+	glDisable(GL_STENCIL_TEST);
+	glStencilMask(0x00);
+
+	// Disable color writing
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+	// Enable the depth test, and depth writing.
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+
+	// Make sure we always write the data into the buffer
+	glDepthFunc(GL_ALWAYS);
+
+	// Clear the depth buffer
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	// Draw portals into depth buffer
+	mRenderer.SetCameraAsActive( camera );
+	for( auto& portal : mPortals )
+	{
+		mRenderer.RenderOneoff( portal->GetHoleRenderable() );
+	}
+
+	// Reset the depth function to the default
+	glDepthFunc(GL_LESS);
+
+	// Enable stencil test and disable writing to stencil buffer
+	glEnable(GL_STENCIL_TEST);
+	glStencilMask(0x00);
+
+	// Draw at stencil >= recursionlevel
+	// which is at the current level or higher (more to the inside)
+	// This basically prevents drawing on the outside of this level.
+	glStencilFunc(GL_LEQUAL, current_recursion_level, 0xFF);
+
+	// Enable color and depth drawing again
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glDepthMask(GL_TRUE);
+
+	// And enable the depth test
+	glEnable(GL_DEPTH_TEST);
+
+	// Draw scene objects normally, only at recursionLevel
+	RenderBaseScene();
+}
+
+void 
+LevelController::RenderBaseScene()
+{
+	// 绘制除了“真传送门”以外的场景
+	auto& walls = mCurrentLevel->GetWalls();
+	for( auto& wall : walls )
+	{
+		mRenderer.RenderOneoff( wall.render_instance.get() );
+	}
+	// 绘制传送门的框
+	for( auto& portal : mPortals )
+	{
+		if( portal->HasBeenPlaced() )
+		{
+			mRenderer.RenderOneoff( portal->GetFrameRenderable() );
 		}
 	}
 }

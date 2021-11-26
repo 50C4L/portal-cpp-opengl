@@ -37,6 +37,8 @@ namespace portal
 		/// 
 		bool IsLinkActive();
 
+		Portal* GetPairedPortal();
+
 	private:
 		glm::vec3 mOriginFaceDir;
 		Renderer::Renderable mFrameRenderable;

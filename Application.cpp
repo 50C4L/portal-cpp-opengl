@@ -202,7 +202,9 @@ void
 Application::Render()
 {
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glDepthMask(GL_TRUE);
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 	mLevelController->RenderScene();
 }
 

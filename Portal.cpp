@@ -101,6 +101,8 @@ Portal::UpdatePosition( glm::vec3 pos, glm::vec3 dir )
 
 	mHasBeenPlaced = true;
 
+	mCamera.SetPosition( pos + mFaceDir * 0.1f );
+
 	return true;
 }
 
@@ -136,4 +138,10 @@ Portal::IsLinkActive()
 		return mHasBeenPlaced && mPairedPortal->HasBeenPlaced();
 	}
 	return false;
+}
+
+Portal*
+Portal::GetPairedPortal()
+{
+	return mPairedPortal;
 }
