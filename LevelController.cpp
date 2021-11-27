@@ -6,6 +6,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "ScenePrimitives.h"
 #include "Renderer.h"
@@ -20,6 +21,32 @@ namespace
 	constexpr int PORTAL_1 = 0;
 	constexpr int PORTAL_2 = 1;
 	const int MAX_PORTAL_RECURSION = 4;
+
+	glm::vec3
+	extract_view_postion_from_matrix( const glm::mat4 view_matrix )
+	{
+		glm::mat4 model_view_t = glm::transpose( view_matrix );
+  
+		// Get plane normals 
+		glm::vec3 n1( model_view_t[0] );
+		glm::vec3 n2( model_view_t[1] );
+		glm::vec3 n3( model_view_t[2] );
+
+		// Get plane distances
+		float d1( model_view_t[0].w );
+		float d2( model_view_t[1].w );
+		float d3( model_view_t[2].w );
+
+		// Get the intersection of these 3 planes
+		glm::vec3 n2n3 = cross( n2, n3 );
+		glm::vec3 n3n1 = cross( n3, n1 );
+		glm::vec3 n1n2 = cross( n1, n2 );
+
+		glm::vec3 top = ( n2n3 * d1 ) + ( n3n1 * d2 ) + ( n1n2 * d3 );
+		float denom = dot( n1, n2n3 );
+
+		return top / -denom;
+	}
 }
 
 ///
@@ -61,6 +88,8 @@ LevelController::LevelController( Renderer& renderer )
 	: mRenderer( renderer )
 	, mMouseX( 0 )
 	, mMouseY( 0 )
+	, mCurrentLevel( nullptr )
+	, mMainCamProjMat( glm::mat4( 1.f ) )
 {
 }
 
@@ -176,6 +205,7 @@ LevelController::ChangeLevelTo( const std::string& path )
 	const float view_width = static_cast<float>( view_size.x );
 	const float view_height = static_cast<float>( view_size.y );
 	mMainCamera = std::make_shared<Camera>( view_width, view_height, Camera::Type::FPS );
+	mMainCamProjMat = mMainCamera->GetProjectionMatrix();
 	mPlayer = std::make_unique<Player>( *mPhysics );
 	mPlayer->Spawn( { 0.f, 20.f, 0.f }, mMainCamera );
 
@@ -247,11 +277,11 @@ LevelController::RenderScene()
 {
 	if( mPortals[ PORTAL_1 ]->IsLinkActive() )
 	{
-		RenderPortals( mMainCamera.get()->GetViewMatrix() );
+		RenderPortals( mMainCamera.get()->GetViewMatrix(), mMainCamProjMat );
 	}
 	else
 	{
-		RenderBaseScene( mMainCamera.get()->GetViewMatrix() );
+		RenderBaseScene( mMainCamera.get()->GetViewMatrix(), mMainCamProjMat );
 	}
 }
 
@@ -278,7 +308,7 @@ LevelController::UpdatePortalState()
 }
 
 void 
-LevelController::RenderPortals( glm::mat4 view_matrix, int current_recursion_level )
+LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matrix, int current_recursion_level )
 {
 	for( auto& portal : mPortals )
 	{
@@ -303,10 +333,21 @@ LevelController::RenderPortals( glm::mat4 view_matrix, int current_recursion_lev
 		// 不通过测试，因此它所覆盖的像素模板值会根据 glStencilOp( GL_INCR, GL_KEEP, GL_KEEP ) 进行current_recursion_level+1
 		// 结果是模板缓存中除了传送门窗口的像素是1，其他都是0
 		mRenderer.SetViewMatrix( view_matrix );
+		mRenderer.SetProjectionMatrix( projection_matrix );
 		mRenderer.RenderOneoff( portal->GetHoleRenderable() );
 
-		// TODO: 假设摄像机已经穿过了这个传送门
+		// 将当前的摄像机视图矩阵变换到配对的传送门后相对的位置
 		glm::mat4 portal_view = portal->ConvertView( view_matrix );
+		// 因为新的虚拟摄像机在传送门后，为了不被传送门后的墙挡住视线，我们将投影矩阵的近裁切面设置在传送门的位置
+		glm::vec3 cam_pos = extract_view_postion_from_matrix( portal_view );
+		float distance_to_portal =  glm::length( cam_pos - portal->GetPairedPortal()->mPosition );
+		glm::mat4 portal_cam_proj_mat = 
+			glm::perspective( 
+				glm::radians( 90.f ),
+				16.f / 9.f,
+				distance_to_portal,
+				1000.f
+			);
 
 		// 这是最底层了，渲染最底层的传送门内容
 		if( current_recursion_level == MAX_PORTAL_RECURSION )
@@ -327,14 +368,13 @@ LevelController::RenderPortals( glm::mat4 view_matrix, int current_recursion_lev
 			// 只对通过模板测试（current_recursion_level + 1)的像素进行绘制
 			glStencilFunc( GL_EQUAL, current_recursion_level + 1, 0xFF );
 
-			// 以配对的传送门的视角渲染场景
-			RenderBaseScene( portal_view );
+			RenderBaseScene( portal_view, portal_cam_proj_mat );
 		}
 		else
 		{
 			// 如果这还不是最底层，我们进行递归
 			// 把这个传送门配对传送门的摄像机传到递归函数中进行绘制，并且将递归层数+1确保递归会结束
-			RenderPortals( portal_view, current_recursion_level + 1 );
+			RenderPortals( portal_view, portal_cam_proj_mat, current_recursion_level + 1 );
 		}
 
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -349,6 +389,7 @@ LevelController::RenderPortals( glm::mat4 view_matrix, int current_recursion_lev
 		// 不通过测试的像素模板值会-1，直到退回到递归最高层时我们最终的模板缓存会全部变为0
 		glStencilOp( GL_DECR, GL_KEEP, GL_KEEP );
 
+		mRenderer.SetProjectionMatrix( portal_cam_proj_mat );
 		mRenderer.SetViewMatrix( view_matrix );
 		for( auto& portal : mPortals )
 		{
@@ -370,6 +411,7 @@ LevelController::RenderPortals( glm::mat4 view_matrix, int current_recursion_lev
 	glClear( GL_DEPTH_BUFFER_BIT );
 
 	// 将两个传送门的窗口写入到深度缓存
+	mRenderer.SetProjectionMatrix( projection_matrix );
 	mRenderer.SetViewMatrix( view_matrix );
 	for( auto& portal : mPortals )
 	{
@@ -388,12 +430,13 @@ LevelController::RenderPortals( glm::mat4 view_matrix, int current_recursion_lev
 	glDepthMask( GL_TRUE );
 	glEnable(GL_DEPTH_TEST);
 	// 绘制正常的场景
-	RenderBaseScene( view_matrix );
+	RenderBaseScene( view_matrix, projection_matrix );
 }
 
 void 
-LevelController::RenderBaseScene( glm::mat4 view_matrix )
+LevelController::RenderBaseScene( glm::mat4 view_matrix, glm::mat4 projection_matrix )
 {
+	mRenderer.SetProjectionMatrix( std::move( projection_matrix ) );
 	mRenderer.SetViewMatrix( std::move( view_matrix ) );
 	// 绘制除了“真传送门”以外的场景
 	auto& walls = mCurrentLevel->GetWalls();
@@ -409,5 +452,5 @@ LevelController::RenderBaseScene( glm::mat4 view_matrix )
 			mRenderer.RenderOneoff( portal->GetFrameRenderable() );
 		}
 	}
-	RenderDebugInfo();
+	//RenderDebugInfo();
 }

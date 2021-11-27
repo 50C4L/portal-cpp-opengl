@@ -74,8 +74,8 @@ namespace portal
 		void RenderDebugInfo();
 		void UpdatePortalState();
 
-		void RenderPortals( glm::mat4 view_matrix, int current_recursion_level = 0 );
-		void RenderBaseScene( glm::mat4 view_matrix );
+		void RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matrix, int current_recursion_level = 0 );
+		void RenderBaseScene( glm::mat4 view_matrix, glm::mat4 projection_matrix );
 
 		Renderer& mRenderer;
 		std::unique_ptr<physics::Physics> mPhysics;
@@ -87,6 +87,7 @@ namespace portal
 		int mMouseY;
 		std::unique_ptr<Portal> mPortals[2];
 		Level* mCurrentLevel;
+		glm::mat4 mMainCamProjMat;
 	};
 }
 
