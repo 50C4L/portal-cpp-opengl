@@ -291,13 +291,17 @@ public:
 		/// @param camera
 		///		Raw pointer to Camera
 		/// 
-		void SetCameraAsActive( Camera* camera );
+		void UseCameraMatrix( Camera* camera );
+
+		void SetViewMatrix( glm::mat4 view );
+
+		void SetProjectionMatrix( glm::mat4 projection );
 
 		Resources& GetResources();
 
 	private:
-		Camera* mActiveCamera;
 		glm::mat4 mProjectionMatrix;
+		glm::mat4 mViewMatrix;
 
 		std::unique_ptr<Resources> mResources;
 

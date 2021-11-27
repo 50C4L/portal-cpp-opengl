@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <memory>
 #include <glm/vec3.hpp>
+#include <glm/mat4x4.hpp>
 
 #include "Physics.h"
 #include "Player.h"
@@ -73,14 +74,15 @@ namespace portal
 		void RenderDebugInfo();
 		void UpdatePortalState();
 
-		void RenderPortals( Camera* camera, int current_recursion_level = 0 );
-		void RenderBaseScene( Camera* camera );
+		void RenderPortals( glm::mat4 view_matrix, int current_recursion_level = 0 );
+		void RenderBaseScene( glm::mat4 view_matrix );
 
 		Renderer& mRenderer;
 		std::unique_ptr<physics::Physics> mPhysics;
 		std::unordered_map<std::string, std::unique_ptr<Level>> mLevels;
 		std::unique_ptr<Player> mPlayer;
 		std::shared_ptr<Camera> mMainCamera;
+		std::shared_ptr<Camera> mPortalCamera;
 		int mMouseX;
 		int mMouseY;
 		std::unique_ptr<Portal> mPortals[2];

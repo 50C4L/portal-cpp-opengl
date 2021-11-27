@@ -61,20 +61,17 @@ Portal::Portal( unsigned int texture, float view_width, float view_height )
 	, mOriginFaceDir( 0.f, 0.f, 1.f )
 	, mFrameRenderable( generate_portal_frame(), Renderer::PORTAL_FRAME_SHADER, texture )
 	, mHoleRenderable( generate_portal_ellipse_hole( PORTAL_GUT_WIDTH, PORTAL_GUT_HEIGHT ), Renderer::PORTAL_HOLE_SHADER, 0, Renderer::Renderable::DrawType::TRIANGLE_FANS )
-	, mCamera( view_width, view_height, Camera::Type::FREE, mPosition, mOriginFaceDir, mOriginFaceDir )
 	, mHasBeenPlaced( false )
 	, mPairedPortal( nullptr )
-	, mPlayerCamera( nullptr )
 {}
 
 Portal::~Portal()
 {}
 
 void 
-Portal::SetPair( Portal* paired_portal, Camera* player_camera )
+Portal::SetPair( Portal* paired_portal )
 {
 	mPairedPortal = paired_portal;
-	mPlayerCamera = player_camera;
 }
 
 bool 
@@ -101,8 +98,6 @@ Portal::UpdatePosition( glm::vec3 pos, glm::vec3 dir )
 
 	mHasBeenPlaced = true;
 
-	mCamera.SetPosition( pos + mFaceDir * 0.1f );
-
 	return true;
 }
 
@@ -118,12 +113,6 @@ Portal::GetHoleRenderable()
 	return &mHoleRenderable;
 }
 
-Camera* 
-Portal::GetCamera()
-{
-	return &mCamera;
-}
-
 bool 
 Portal::HasBeenPlaced()
 {
@@ -133,7 +122,7 @@ Portal::HasBeenPlaced()
 bool
 Portal::IsLinkActive()
 {
-	if( mPairedPortal && mPlayerCamera )
+	if( mPairedPortal )
 	{
 		return mHasBeenPlaced && mPairedPortal->HasBeenPlaced();
 	}
@@ -144,4 +133,20 @@ Portal*
 Portal::GetPairedPortal()
 {
 	return mPairedPortal;
+}
+
+glm::mat4 
+Portal::ConvertView( const glm::mat4& view_matrix )
+{
+	if( !mPairedPortal )
+	{
+		std::cerr << "ERROR: Trying to convert portal view while the paired portal is invalid." << std::endl;
+		return view_matrix;
+	}
+	// 先将视图矩阵转换到本传送门的本地空间
+	glm::mat4 model_view = view_matrix * mHoleRenderable.GetTransform();
+	glm::mat4 final_view = model_view
+						   * glm::rotate( glm::mat4( 1.f ), glm::radians( 180.f ), glm::vec3( 0.f, 1.f, 0.f ) )
+						   * glm::inverse( mPairedPortal->GetHoleRenderable()->GetTransform() );
+	return final_view;
 }

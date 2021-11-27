@@ -181,8 +181,8 @@ LevelController::ChangeLevelTo( const std::string& path )
 
 	mPortals[PORTAL_1] = std::make_unique<Portal>( mRenderer.GetResources().GetTextureId( "resources/textures/blueportal.png" ), view_width, view_height );
 	mPortals[PORTAL_2] = std::make_unique<Portal>( mRenderer.GetResources().GetTextureId( "resources/textures/orangeportal.png" ), view_width, view_height );
-	mPortals[PORTAL_1]->SetPair( mPortals[PORTAL_2].get(), mMainCamera.get() );
-	mPortals[PORTAL_2]->SetPair( mPortals[PORTAL_1].get(), mMainCamera.get() );
+	mPortals[PORTAL_1]->SetPair( mPortals[PORTAL_2].get() );
+	mPortals[PORTAL_2]->SetPair( mPortals[PORTAL_1].get() );
 
 	// 根据关卡数据生成静态物体
 	auto& walls = mCurrentLevel->GetWalls();
@@ -198,7 +198,7 @@ LevelController::ChangeLevelTo( const std::string& path )
 		);
 		wall.mCollisionBox = mPhysics->CreateBox( wall.position, { wall.width, wall.height, wall.depth }, Physics::PhysicsObject::Type::STATIC );
 	}
-	mRenderer.SetCameraAsActive( mMainCamera.get() );
+	mRenderer.UseCameraMatrix( mMainCamera.get() );
 }
 
 void
@@ -247,11 +247,11 @@ LevelController::RenderScene()
 {
 	if( mPortals[ PORTAL_1 ]->IsLinkActive() )
 	{
-		RenderPortals( mMainCamera.get() );
+		RenderPortals( mMainCamera.get()->GetViewMatrix() );
 	}
 	else
 	{
-		RenderBaseScene( mMainCamera.get() );
+		RenderBaseScene( mMainCamera.get()->GetViewMatrix() );
 	}
 }
 
@@ -278,7 +278,7 @@ LevelController::UpdatePortalState()
 }
 
 void 
-LevelController::RenderPortals( Camera* camera, int current_recursion_level )
+LevelController::RenderPortals( glm::mat4 view_matrix, int current_recursion_level )
 {
 	for( auto& portal : mPortals )
 	{
@@ -302,11 +302,11 @@ LevelController::RenderPortals( Camera* camera, int current_recursion_level )
 		// 屏幕上传送门窗口覆盖的位置会因为规则 glStencilFunc( GL_NOTEQUAL, current_recursion_level, 0xFF )
 		// 不通过测试，因此它所覆盖的像素模板值会根据 glStencilOp( GL_INCR, GL_KEEP, GL_KEEP ) 进行current_recursion_level+1
 		// 结果是模板缓存中除了传送门窗口的像素是1，其他都是0
-		mRenderer.SetCameraAsActive( camera );
+		mRenderer.SetViewMatrix( view_matrix );
 		mRenderer.RenderOneoff( portal->GetHoleRenderable() );
 
 		// TODO: 假设摄像机已经穿过了这个传送门
-		Camera* paired_portal_camera = portal->GetPairedPortal()->GetCamera();
+		glm::mat4 portal_view = portal->ConvertView( view_matrix );
 
 		// 这是最底层了，渲染最底层的传送门内容
 		if( current_recursion_level == MAX_PORTAL_RECURSION )
@@ -328,13 +328,13 @@ LevelController::RenderPortals( Camera* camera, int current_recursion_level )
 			glStencilFunc( GL_EQUAL, current_recursion_level + 1, 0xFF );
 
 			// 以配对的传送门的视角渲染场景
-			RenderBaseScene( paired_portal_camera );
+			RenderBaseScene( portal_view );
 		}
 		else
 		{
 			// 如果这还不是最底层，我们进行递归
 			// 把这个传送门配对传送门的摄像机传到递归函数中进行绘制，并且将递归层数+1确保递归会结束
-			RenderPortals( paired_portal_camera, current_recursion_level + 1 );
+			RenderPortals( portal_view, current_recursion_level + 1 );
 		}
 
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -349,7 +349,7 @@ LevelController::RenderPortals( Camera* camera, int current_recursion_level )
 		// 不通过测试的像素模板值会-1，直到退回到递归最高层时我们最终的模板缓存会全部变为0
 		glStencilOp( GL_DECR, GL_KEEP, GL_KEEP );
 
-		mRenderer.SetCameraAsActive( camera );
+		mRenderer.SetViewMatrix( view_matrix );
 		for( auto& portal : mPortals )
 		{
 			mRenderer.RenderOneoff( portal->GetHoleRenderable() );
@@ -370,7 +370,7 @@ LevelController::RenderPortals( Camera* camera, int current_recursion_level )
 	glClear( GL_DEPTH_BUFFER_BIT );
 
 	// 将两个传送门的窗口写入到深度缓存
-	mRenderer.SetCameraAsActive( camera );
+	mRenderer.SetViewMatrix( view_matrix );
 	for( auto& portal : mPortals )
 	{
 		mRenderer.RenderOneoff( portal->GetHoleRenderable() );
@@ -388,13 +388,13 @@ LevelController::RenderPortals( Camera* camera, int current_recursion_level )
 	glDepthMask( GL_TRUE );
 	glEnable(GL_DEPTH_TEST);
 	// 绘制正常的场景
-	RenderBaseScene( camera );
+	RenderBaseScene( view_matrix );
 }
 
 void 
-LevelController::RenderBaseScene( Camera* camera )
+LevelController::RenderBaseScene( glm::mat4 view_matrix )
 {
-	mRenderer.SetCameraAsActive( camera );
+	mRenderer.SetViewMatrix( std::move( view_matrix ) );
 	// 绘制除了“真传送门”以外的场景
 	auto& walls = mCurrentLevel->GetWalls();
 	for( auto& wall : walls )

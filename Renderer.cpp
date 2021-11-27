@@ -439,8 +439,8 @@ Renderer::Resources::GetShader( const std::string& name )
 /// Renderer implementations
 /// 
 Renderer::Renderer()
-	: mActiveCamera( nullptr )
-	, mProjectionMatrix( glm::mat4( 1.f ) )
+	: mProjectionMatrix( glm::mat4( 1.f ) )
+	, mViewMatrix( glm::mat4( 1.f ) )
 	, mViewportSize( { 0, 0 } )
 {
 	mResources = std::make_unique<Resources>();
@@ -497,13 +497,9 @@ Renderer::RenderOneoff( Renderable* renderable_obj )
 	glBindTexture( GL_TEXTURE_2D, renderable_obj->GetTexture() );
 	auto shader = mResources->GetShader( renderable_obj->GetShaderName() );
 	glUseProgram( shader.GetId() );
-	if( mActiveCamera )
-	{
-		// 传递当前摄像机的视图投影矩阵到当前Shader
-		shader.SetModelMatrix( renderable_obj->GetTransform() );
-		shader.SetViewMatrix( mActiveCamera->GetViewMatrix() );
-		shader.SetProjectionMatrix( mProjectionMatrix );
-	}
+	shader.SetModelMatrix( renderable_obj->GetTransform() );
+	shader.SetViewMatrix( mViewMatrix );
+	shader.SetProjectionMatrix( mProjectionMatrix );
 	glBindVertexArray( renderable_obj->GetVAO() );
 	glDrawArrays( 
 		get_gl_draw_mode( renderable_obj->GetDrawType() ), 
@@ -512,10 +508,22 @@ Renderer::RenderOneoff( Renderable* renderable_obj )
 }
 
 void 
-Renderer::SetCameraAsActive( Camera* camera )
+Renderer::UseCameraMatrix( Camera* camera )
 {
-	mActiveCamera = camera;
-	mProjectionMatrix = mActiveCamera->GetProjectionMatrix();
+	mViewMatrix = camera->GetViewMatrix();
+	mProjectionMatrix = camera->GetProjectionMatrix();
+}
+
+void
+Renderer::SetViewMatrix( glm::mat4 view )
+{
+	mViewMatrix = std::move( view );
+}
+
+void
+Renderer::SetProjectionMatrix( glm::mat4 projection )
+{
+	mProjectionMatrix = std::move( projection );
 }
 
 Renderer::Resources&

@@ -2,7 +2,6 @@
 #define _PORTAL_H
 
 #include "Renderer.h"
-#include "Camera.h"
 
 namespace portal
 {
@@ -15,7 +14,7 @@ namespace portal
 		Portal( unsigned int texture, float view_width, float view_height );
 		~Portal();
 
-		void SetPair( Portal* paired_portal, Camera* player_camera );
+		void SetPair( Portal* paired_portal );
 
 		bool UpdatePosition( glm::vec3 pos, glm::vec3 dir );
 
@@ -25,7 +24,6 @@ namespace portal
 		glm::vec3 mFaceDir;
 		glm::vec3 mPosition;
 
-		Camera* GetCamera();
 		bool HasBeenPlaced();
 
 		///
@@ -39,15 +37,24 @@ namespace portal
 
 		Portal* GetPairedPortal();
 
+		///
+		/// 将提供的视图矩阵转换到配对的传送门相对位置的视图矩阵
+		/// 
+		/// @param view_matrix
+		///		当前到本传送门的视图矩阵
+		/// 
+		/// @return
+		///		转换后配对传送门后的视图矩阵
+		/// 
+		glm::mat4 ConvertView( const glm::mat4& view_matrix );
+
 	private:
 		glm::vec3 mOriginFaceDir;
 		Renderer::Renderable mFrameRenderable;
 		Renderer::Renderable mHoleRenderable;
-		Camera mCamera;
 		bool mHasBeenPlaced;
 
 		Portal* mPairedPortal;
-		Camera* mPlayerCamera;
 	};
 }
 
