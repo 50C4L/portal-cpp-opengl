@@ -54,7 +54,56 @@ namespace
 	}
 }
 
-SceneBox::SceneBox( glm::vec3 position, float width, float height, float depth, std::string shader_name, unsigned int texture_id )
-	: Renderer::Renderable( generate_box_vertices( position, width, height, depth, 4.f ), std::move( shader_name ), texture_id )
+SceneBox::SceneBox( glm::vec3 position, float width, float height, float depth, std::string shader_name, TextureInfo* texture )
+	: Renderer::Renderable( generate_box_vertices( position, width, height, depth, 4.f ), std::move( shader_name ), texture )
 {
 }
+
+SceneSkyBox::SceneSkyBox( TextureInfo* cube_map_tex )
+	: Renderer::Renderable(
+		{
+			// Top
+			{{ -500.0f,  500.0f, -500.0f }, {}, {}, {} },
+			{{  500.0f,  500.0f, -500.0f }, {}, {}, {} },
+			{{  500.0f,  500.0f,  500.0f }, {}, {}, {} },
+			{{  500.0f,  500.0f,  500.0f }, {}, {}, {} },
+			{{ -500.0f,  500.0f,  500.0f }, {}, {}, {} },
+			{{ -500.0f,  500.0f, -500.0f }, {}, {}, {} },
+			// Bottom
+			{{ -500.0f, -500.0f, -500.0f }, {}, {}, {} },
+			{{ -500.0f, -500.0f,  500.0f }, {}, {}, {} },
+			{{  500.0f, -500.0f, -500.0f }, {}, {}, {} },
+			{{  500.0f, -500.0f, -500.0f }, {}, {}, {} },
+			{{ -500.0f, -500.0f,  500.0f }, {}, {}, {} },
+			{{  500.0f, -500.0f,  500.0f }, {}, {}, {} },
+			// Left
+			{{ -500.0f, -500.0f,  500.0f }, {}, {}, {} },
+			{{ -500.0f, -500.0f, -500.0f }, {}, {}, {} },
+			{{ -500.0f,  500.0f, -500.0f }, {}, {}, {} },
+			{{ -500.0f,  500.0f, -500.0f }, {}, {}, {} },
+			{{ -500.0f,  500.0f,  500.0f }, {}, {}, {} },
+			{{ -500.0f, -500.0f,  500.0f }, {}, {}, {} },
+			// Right
+			{{ 500.0f, -500.0f, -500.0f }, {}, {}, {} },
+			{{ 500.0f, -500.0f,  500.0f }, {}, {}, {} },
+			{{ 500.0f,  500.0f,  500.0f }, {}, {}, {} },
+			{{ 500.0f,  500.0f,  500.0f }, {}, {}, {} },
+			{{ 500.0f,  500.0f, -500.0f }, {}, {}, {} },
+			{{ 500.0f, -500.0f, -500.0f }, {}, {}, {} },
+			// front
+			{{ -500.0f, -500.0f,  500.0f }, {}, {}, {} },
+			{{ -500.0f,  500.0f,  500.0f }, {}, {}, {} },
+			{{  500.0f,  500.0f,  500.0f }, {}, {}, {} },
+			{{  500.0f,  500.0f,  500.0f }, {}, {}, {} },
+			{{  500.0f, -500.0f,  500.0f }, {}, {}, {} },
+			{{ -500.0f, -500.0f,  500.0f }, {}, {}, {} },
+			// back
+			{{ -500.0f,  500.0f, -500.0f }, {}, {}, {} },
+			{{ -500.0f, -500.0f, -500.0f }, {}, {}, {} },
+			{{  500.0f, -500.0f, -500.0f }, {}, {}, {} },
+			{{  500.0f, -500.0f, -500.0f }, {}, {}, {} },
+			{{  500.0f,  500.0f, -500.0f }, {}, {}, {} },
+			{{ -500.0f,  500.0f, -500.0f }, {}, {}, {} },
+		}, Renderer::DEFAULT_SKYBOX_SHADER, cube_map_tex
+	)
+{}

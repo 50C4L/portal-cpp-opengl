@@ -20,7 +20,7 @@ namespace
 {
 	constexpr int PORTAL_1 = 0;
 	constexpr int PORTAL_2 = 1;
-	const int MAX_PORTAL_RECURSION = 4;
+	const int MAX_PORTAL_RECURSION = 1;
 
 	glm::vec3
 	extract_view_postion_from_matrix( const glm::mat4 view_matrix )
@@ -209,8 +209,10 @@ LevelController::ChangeLevelTo( const std::string& path )
 	mPlayer = std::make_unique<Player>( *mPhysics );
 	mPlayer->Spawn( { 0.f, 20.f, 0.f }, mMainCamera );
 
-	mPortals[PORTAL_1] = std::make_unique<Portal>( mRenderer.GetResources().GetTextureId( "resources/textures/blueportal.png" ), view_width, view_height );
-	mPortals[PORTAL_2] = std::make_unique<Portal>( mRenderer.GetResources().GetTextureId( "resources/textures/orangeportal.png" ), view_width, view_height );
+	mSkybox = std::make_unique<SceneSkyBox>( mRenderer.GetResources().GetTextureInfo( "SKYBOX" ) );
+	mSkybox->Rotate( 135.f, { 0.f, 1.f, 0.f } );
+	mPortals[PORTAL_1] = std::make_unique<Portal>( mRenderer.GetResources().GetTextureInfo( "resources/textures/blueportal.png" ), view_width, view_height );
+	mPortals[PORTAL_2] = std::make_unique<Portal>( mRenderer.GetResources().GetTextureInfo( "resources/textures/orangeportal.png" ), view_width, view_height );
 	mPortals[PORTAL_1]->SetPair( mPortals[PORTAL_2].get() );
 	mPortals[PORTAL_2]->SetPair( mPortals[PORTAL_1].get() );
 
@@ -224,7 +226,7 @@ LevelController::ChangeLevelTo( const std::string& path )
 			wall.height,
 			wall.depth,
 			wall.shader_name,
-			mRenderer.GetResources().GetTextureId( wall.texture_path )
+			mRenderer.GetResources().GetTextureInfo( wall.texture_path )
 		);
 		wall.mCollisionBox = mPhysics->CreateBox( wall.position, { wall.width, wall.height, wall.depth }, Physics::PhysicsObject::Type::STATIC );
 	}
@@ -283,6 +285,7 @@ LevelController::RenderScene()
 	{
 		RenderBaseScene( mMainCamera.get()->GetViewMatrix(), mMainCamProjMat );
 	}
+	RenderSkybox( mMainCamera.get()->GetViewMatrix(), mMainCamProjMat );
 }
 
 void
@@ -345,7 +348,7 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 			glm::perspective( 
 				glm::radians( 90.f ),
 				16.f / 9.f,
-				distance_to_portal,
+				distance_to_portal - 2.f,
 				1000.f
 			);
 
@@ -431,6 +434,7 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 	glEnable(GL_DEPTH_TEST);
 	// 绘制正常的场景
 	RenderBaseScene( view_matrix, projection_matrix );
+	RenderSkybox( view_matrix, projection_matrix );
 }
 
 void 
@@ -452,5 +456,14 @@ LevelController::RenderBaseScene( glm::mat4 view_matrix, glm::mat4 projection_ma
 			mRenderer.RenderOneoff( portal->GetFrameRenderable() );
 		}
 	}
-	//RenderDebugInfo();
+}
+
+void
+LevelController::RenderSkybox( glm::mat4 view_matrix, glm::mat4 projection_matrix )
+{
+	mRenderer.SetProjectionMatrix( std::move( projection_matrix ) );
+	mRenderer.SetViewMatrix( std::move( view_matrix ) );
+	glFrontFace( GL_CCW );
+	mRenderer.RenderOneoff( mSkybox.get() );
+	glFrontFace( GL_CW );
 }

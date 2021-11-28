@@ -8,8 +8,15 @@ namespace portal
 	class SceneBox : public Renderer::Renderable
 	{
 	public:
-		SceneBox( glm::vec3 position, float width, float height, float depth, std::string shader_name, unsigned int texture_id );
+		SceneBox( glm::vec3 position, float width, float height, float depth, std::string shader_name, TextureInfo* texture );
 		~SceneBox() = default;
+	};
+
+	class SceneSkyBox : public Renderer::Renderable
+	{
+	public:
+		SceneSkyBox( TextureInfo* cube_map_tex );
+		~SceneSkyBox() = default;
 	};
 }
 

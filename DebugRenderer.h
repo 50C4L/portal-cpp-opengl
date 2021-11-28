@@ -65,7 +65,7 @@ namespace portal
 				auto renderable = std::make_unique<Renderer::Renderable>(
 					std::move( mVertices ),
 					Renderer::DEBUG_PHYSICS_SHADER,
-					0,
+					nullptr,
 					Renderer::Renderable::DrawType::LINES
 				);
 				mVertices.clear();

@@ -12,6 +12,7 @@
 #include <stb_image.h>
 
 #include "Camera.h"
+#include "BuiltInShaders.h"
 
 using namespace portal;
 
@@ -24,100 +25,6 @@ namespace
 	constexpr GLuint COLOR_INDEX = 1;
 	constexpr GLuint UV_INDEX = 2;
 	constexpr GLuint NORMAL_INDEX = 3;
-
-	const std::string DEFAULT_VERTEX_SHADER = R"~~~(
-		#version 330 core
-		layout (location = 0) in vec3 in_pos;
-		layout (location = 1) in vec4 in_color;
-		layout (location = 2) in vec2 in_uv;
-		layout (location = 3) in vec3 in_normal;
-
-		out vec2 tex_coord;
-		out vec4 color;
-		out vec3 frag_pos;
-		out vec3 normal;
-
-		uniform mat4 model_mat;
-		uniform mat4 view_mat;
-		uniform mat4 projection_mat;
-		
-		void main()
-		{
-			gl_Position = projection_mat * view_mat * model_mat * vec4( in_pos, 1.0 );
-			frag_pos = vec3( model_mat * vec4( in_pos, 1.0 ) );
-			tex_coord = in_uv;
-			color = in_color;
-			vec4 temp_normal = model_mat * vec4( in_normal, 1.0 );
-			normal = temp_normal.xyz;
-		}
-	)~~~";
-
-	const std::string DEFAULT_FRAGMENT_SHADER = R"~~~(
-		#version 330 core
-		out vec4 frag_color;
-
-		in vec2 tex_coord;
-		in vec3 frag_pos;
-		in vec3 normal;
-
-		// texture
-		uniform sampler2D color_texture;
-
-		void main()
-		{
-			vec3 light_color = vec3( 1.0, 1.0, 1.0 );
-			vec3 light_pos = vec3( 1000.0, 1000.0, 500.0 );
-
-			// Ambient
-			vec3 ambient = 0.15 * light_color;
-
-			// Diffuse
-			vec3 n_normal = normalize( normal );
-			vec3 light_dir = normalize( light_pos - frag_pos );
-			float diff_f = max( dot( n_normal, light_dir ), 0.0 );
-			vec3 diffuse = diff_f * light_color;
-			
-			// Final
-			vec4 tex_color = texture( color_texture, tex_coord );
-			vec3 result = ( ambient + diffuse ) * tex_color.rgb;
-			frag_color = vec4( result, tex_color.a );
-		} 
-	)~~~";
-
-	const std::string DEBUG_PHYSICS_FRAGMENT_SHADER = R"~~~(
-		#version 330 core
-		out vec4 frag_color;
-		in vec4 color;
-		
-		void main()
-		{
-			frag_color = color;
-		} 
-	)~~~";
-
-	const std::string PORTAL_HOLE_FRAGMENT_SHADER = R"~~~(
-		#version 330 core
-		out vec4 frag_color;
-		in vec4 color;
-		
-		void main()
-		{
-			frag_color = color;
-		} 
-	)~~~";
-
-	const std::string PORTAL_FRAME_FRAGMENT_SHADER = R"~~~(
-		#version 330 core
-		out vec4 frag_color;
-		in vec2 tex_coord;
-
-		uniform sampler2D color_texture;
-		
-		void main()
-		{
-			frag_color = texture( color_texture, tex_coord );
-		} 
-	)~~~";
 
 	int get_gl_draw_mode( Renderer::Renderable::DrawType type )
 	{
@@ -135,6 +42,7 @@ namespace
 }
 
 const std::string Renderer::DEFAULT_SHADER = "DEFLAULT_SHADER";
+const std::string Renderer::DEFAULT_SKYBOX_SHADER = "DEFAULT_SKYBOX_SHADER";
 const std::string Renderer::DEBUG_PHYSICS_SHADER = "DEBUG_PHYSICS_SHADER";
 const std::string Renderer::PORTAL_HOLE_SHADER = "PORTAL_HOLE_SHADER";
 const std::string Renderer::PORTAL_FRAME_SHADER = "PORTAL_FRAME_SHADER";
@@ -253,7 +161,7 @@ Renderer::Shader::SetMat4( int location, const glm::mat4& matrix )
 ///
 /// Renderable implementaitons
 /// 
-Renderer::Renderable::Renderable( std::vector<Vertex>&& vertices, std::string shader_name, unsigned int texture_id, DrawType draw_type )
+Renderer::Renderable::Renderable( std::vector<Vertex>&& vertices, std::string shader_name, TextureInfo* texture_id, DrawType draw_type )
 	: mVBO( 0 )
 	, mVAO( 0 )
 	, mNumberOfVertices( static_cast<int>( vertices.size() ) )
@@ -344,7 +252,7 @@ Renderer::Renderable::GetShaderName() const
 	return mShader;
 }
 
-unsigned int
+TextureInfo*
 Renderer::Renderable::GetTexture() const
 {
 	return mTexture;
@@ -382,7 +290,7 @@ Renderer::Resources::LoadTexture( const std::string& path )
 		glTexImage2D( GL_TEXTURE_2D, 0, gl_color_channel, width, height, 0, gl_color_channel, GL_UNSIGNED_BYTE, data );
 		glGenerateMipmap( GL_TEXTURE_2D );
 
-		mLoadedTextures.emplace( path, texture_id );
+		mLoadedTextures.emplace( path, TextureInfo{ texture_id, GL_TEXTURE_2D } );
 		success = true;
 	}
 	else
@@ -393,18 +301,58 @@ Renderer::Resources::LoadTexture( const std::string& path )
 	return success;
 }
 
-unsigned int 
-Renderer::Resources::GetTextureId( const std::string& path )
+bool 
+Renderer::Resources::LoadCubeMaps( std::vector<std::string> files, const std::string& name )
+{
+	TextureInfo tex_info{};
+	tex_info.texture_id = GL_TEXTURE_CUBE_MAP;
+	glGenTextures( 1, &tex_info.texture_id );
+	glBindTexture( GL_TEXTURE_CUBE_MAP, tex_info.texture_id );
+
+	int width, height, nrChannels;
+	for (unsigned int i = 0; i < files.size(); i++)
+	{
+		unsigned char *data = stbi_load( files[i].c_str(), &width, &height, &nrChannels, 0 );
+		if (data)
+		{
+			glTexImage2D( GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 
+						  0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
+			);
+			stbi_image_free(data);
+		}
+		else
+		{
+			std::cerr << "ERROR: Cubemap tex failed to load at path: " << files[i] << std::endl;
+			stbi_image_free(data);
+			return false;
+		}
+	}
+	glTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE );
+
+	mLoadedTextures.emplace( name, std::move( tex_info ) );
+
+	return true;
+}
+
+
+TextureInfo*
+Renderer::Resources::GetTextureInfo( const std::string& path )
 {
 	auto itr = mLoadedTextures.find( path );
 	if( itr != mLoadedTextures.end() )
 	{
-		return itr->second;
+		return &(itr->second);
 	}
 	else
 	{
+		// TODO: 返回一个紫色之类的默认贴图
+		static TextureInfo default_tex{ 0, GL_TEXTURE_2D };
 		std::cerr << "ERROR: Cannot find the required texture " << path << std::endl;
-		return 0; // TODO: return a default texture
+		return &default_tex; 
 	}
 }
 
@@ -451,6 +399,8 @@ Renderer::Renderer()
 	glFrontFace( GL_CW );
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA ); 
+
+	// 编译内置shader
 	if( !mResources->CompileShader( DEFAULT_SHADER, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER ) )
 	{
 		std::cerr << "ERROR: Failed to compile default shaders." << std::endl;
@@ -464,6 +414,10 @@ Renderer::Renderer()
 		std::cerr << "ERROR: Failed to compile default shaders." << std::endl;
 	}
 	if( !mResources->CompileShader( PORTAL_FRAME_SHADER, DEFAULT_VERTEX_SHADER, PORTAL_FRAME_FRAGMENT_SHADER ) )
+	{
+		std::cerr << "ERROR: Failed to compile default shaders." << std::endl;
+	}
+	if( !mResources->CompileShader( DEFAULT_SKYBOX_SHADER, DEFAULT_SKYBOX_VERTEX_SHADER, DEFAULT_SKYBOX_FRAGMENT_SHADER ) )
 	{
 		std::cerr << "ERROR: Failed to compile default shaders." << std::endl;
 	}
@@ -494,7 +448,10 @@ Renderer::RenderOneoff( Renderable* renderable_obj )
 	{
 		return;
 	}
-	glBindTexture( GL_TEXTURE_2D, renderable_obj->GetTexture() );
+	if( auto tex_ptr =  renderable_obj->GetTexture() )
+	{
+		glBindTexture( tex_ptr->tex_type, tex_ptr->texture_id );
+	}
 	auto shader = mResources->GetShader( renderable_obj->GetShaderName() );
 	glUseProgram( shader.GetId() );
 	shader.SetModelMatrix( renderable_obj->GetTransform() );

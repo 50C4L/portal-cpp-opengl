@@ -169,9 +169,19 @@ Application::Initialize()
 	mRenderer->ResizeViewport( { mWindowWidth, mWindowHeight } );
 
 	// 加载资源
+	// TODO: 每个关卡应该独立加载
 	mRenderer->GetResources().LoadTexture( "resources/textures/white_wall.jpg" );
 	mRenderer->GetResources().LoadTexture( "resources/textures/blueportal.png" );
 	mRenderer->GetResources().LoadTexture( "resources/textures/orangeportal.png" );
+	mRenderer->GetResources().LoadCubeMaps( {
+		"resources/textures/sky/right.jpg",
+		"resources/textures/sky/left.jpg",
+		"resources/textures/sky/top.jpg",
+		"resources/textures/sky/bottom.jpg",
+		"resources/textures/sky/front.jpg",
+		"resources/textures/sky/back.jpg"
+	}, "SKYBOX" );
+
 	mLevelController = std::make_unique<LevelController>( *mRenderer );
 	mLevelController->Initialize( UPDATE_TIME );
 	if( mLevelController->LoadLevelFile( "resources/levels/level_intro.json" ) )

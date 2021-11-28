@@ -11,7 +11,7 @@ namespace portal
 	class Portal
 	{
 	public:
-		Portal( unsigned int texture, float view_width, float view_height );
+		Portal( TextureInfo* texture, float view_width, float view_height );
 		~Portal();
 
 		void SetPair( Portal* paired_portal );

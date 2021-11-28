@@ -20,6 +20,12 @@ namespace portal
 		glm::vec3 normal;
 	};
 
+	struct TextureInfo
+	{
+		unsigned int texture_id;
+		int tex_type;
+	};
+
 	///
 	/// 简易（简陋）渲染器
 	/// 只能在获取OpenGL Context后使用
@@ -29,6 +35,7 @@ namespace portal
 	public:
 		static const std::string DEFAULT_SHADER;
 		static const std::string DEBUG_PHYSICS_SHADER;
+		static const std::string DEFAULT_SKYBOX_SHADER;
 		static const std::string PORTAL_HOLE_SHADER;
 		static const std::string PORTAL_FRAME_SHADER;
 
@@ -149,7 +156,7 @@ namespace portal
 			Renderable( 
 				std::vector<Vertex>&& vertices, 
 				std::string shader_name, 
-				unsigned int texture_id, 
+				TextureInfo* texture_id, 
 				DrawType draw_type = DrawType::TRIANGLES );
 			~Renderable();
 
@@ -189,7 +196,7 @@ namespace portal
 			void Rotate( float angle, glm::vec3 axis );
 
 			std::string GetShaderName() const;
-			unsigned int GetTexture() const;
+			TextureInfo* GetTexture() const;
 			DrawType GetDrawType() const;
 			glm::mat4 GetTransform();
 
@@ -198,7 +205,7 @@ namespace portal
 			unsigned int mVAO;
 			int mNumberOfVertices;
 			std::string mShader;
-			unsigned int mTexture;
+			TextureInfo* mTexture;
 			DrawType mDrawType;
 			glm::vec3 mTranslation;
 			glm::vec3 mRotation;
@@ -228,15 +235,30 @@ namespace portal
 			bool LoadTexture( const std::string& path );
 
 			///
+			/// 读取立方体贴图文件
+			/// 请确保 files 参数的文件路径顺序是 上下左右前后
+			/// 
+			/// @param files
+			///		六个方向的贴图文件路径，请确保顺序正确
+			/// 
+			/// @param name
+			///		立方体贴图唯一名字，用于加载后查找
+			/// 
+			/// @return bool
+			///		True表示成功
+			/// 
+			bool LoadCubeMaps( std::vector<std::string> files, const std::string& name );
+
+			///
 			/// 获取已加载的贴图Id
 			/// 
 			/// @param path
 			///		贴图文件的路径
 			/// 
-			/// @param unsigned int
-			///		Texture id
+			/// @return
+			///		Const referecen to TextureInfo
 			/// 
-			unsigned int GetTextureId( const std::string& path );
+			TextureInfo* GetTextureInfo( const std::string& path );
 
 			///
 			/// 编译Shader，成功编译后Shader的program id会存放在mCompiledShaders里。
@@ -268,7 +290,7 @@ namespace portal
 			Shader& GetShader( const std::string& name );
 
 		private:
-			std::unordered_map<std::string, unsigned int> mLoadedTextures;
+			std::unordered_map<std::string, TextureInfo> mLoadedTextures;
 			std::unordered_map<std::string, Shader> mCompiledShaders;
 		};
 

@@ -159,6 +159,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="BuiltInShaders.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="DebugRenderer.h" />
     <ClInclude Include="LevelController.h" />

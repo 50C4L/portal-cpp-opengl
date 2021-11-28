@@ -55,12 +55,12 @@ namespace
 	}
 }
 
-Portal::Portal( unsigned int texture, float view_width, float view_height )
+Portal::Portal( TextureInfo* texture, float view_width, float view_height )
 	: mFaceDir( 0.f, 0.f, 1.f )
 	, mPosition( 0.f, 0.f, 0.f )
 	, mOriginFaceDir( 0.f, 0.f, 1.f )
 	, mFrameRenderable( generate_portal_frame(), Renderer::PORTAL_FRAME_SHADER, texture )
-	, mHoleRenderable( generate_portal_ellipse_hole( PORTAL_GUT_WIDTH, PORTAL_GUT_HEIGHT ), Renderer::PORTAL_HOLE_SHADER, 0, Renderer::Renderable::DrawType::TRIANGLE_FANS )
+	, mHoleRenderable( generate_portal_ellipse_hole( PORTAL_GUT_WIDTH, PORTAL_GUT_HEIGHT ), Renderer::PORTAL_HOLE_SHADER, nullptr, Renderer::Renderable::DrawType::TRIANGLE_FANS )
 	, mHasBeenPlaced( false )
 	, mPairedPortal( nullptr )
 {}

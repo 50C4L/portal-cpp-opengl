@@ -13,6 +13,7 @@
 namespace portal
 {
 	class SceneBox;
+	class SceneSkyBox;
 	class Renderer;
 	class Camera;
 	class Portal;
@@ -76,15 +77,16 @@ namespace portal
 
 		void RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matrix, int current_recursion_level = 0 );
 		void RenderBaseScene( glm::mat4 view_matrix, glm::mat4 projection_matrix );
+		void RenderSkybox( glm::mat4 view_matrix, glm::mat4 projection_matrix );
 
 		Renderer& mRenderer;
 		std::unique_ptr<physics::Physics> mPhysics;
 		std::unordered_map<std::string, std::unique_ptr<Level>> mLevels;
 		std::unique_ptr<Player> mPlayer;
 		std::shared_ptr<Camera> mMainCamera;
-		std::shared_ptr<Camera> mPortalCamera;
 		int mMouseX;
 		int mMouseY;
+		std::unique_ptr<SceneSkyBox> mSkybox;
 		std::unique_ptr<Portal> mPortals[2];
 		Level* mCurrentLevel;
 		glm::mat4 mMainCamProjMat;
