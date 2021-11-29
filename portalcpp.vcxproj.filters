@@ -79,5 +79,8 @@
     <ClInclude Include="BuiltInShaders.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="LevelConstants.h">
+      <Filter>Source Files\scene</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

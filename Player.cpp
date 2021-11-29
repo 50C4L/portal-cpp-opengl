@@ -2,9 +2,11 @@
 
 #include <iostream>
 #include "Camera.h"
+#include "LevelConstants.h"
 
 using namespace portal;
 using namespace portal::physics;
+using namespace portal::level;
 
 namespace
 {
@@ -47,7 +49,9 @@ Player::Spawn( glm::vec3 position, std::shared_ptr<Camera> camera )
 	mCollisionCapsule = mPhysics.CreateCapsule( 
 		position, 
 		PLAYER_CAPSULE_RAIDUS, PLAYER_CAPSULE_HEIGHT, 
-		Physics::PhysicsObject::Type::DYNAMIC
+		Physics::PhysicsObject::Type::DYNAMIC,
+		static_cast<int>( PhysicsGroup::PLAYER ),
+		static_cast<int>( PhysicsGroup::WALL )
 	);
 	mCollisionCapsule->SetAngularFactor( { 0.f, 0.f, 0.f } );
 	mCollisionCapsule->SetDamping( PLAYER_AIR_DAMPING, 0.f );
@@ -117,6 +121,7 @@ Player::HandleKeys( std::unordered_map<unsigned int, bool>& key_map )
 
 		if( mIsRunning )
 		{
+			mCollisionCapsule->Activate();
 			mCollisionCapsule->SetDamping( 0.f, 0.f );
 			mMoveDirection = mMoveDirection == glm::vec3{ 0.f } ? mMoveDirection :glm::normalize( mMoveDirection );
 			mMoveVelocity = mMoveDirection * PLAYER_MAX_VELOCITY;
@@ -146,7 +151,8 @@ Player::HandleMouse( std::unordered_map<int, bool>& button_map )
 			auto look_dir = mMainCamera->GetLookDirection();
 			look_dir *= 1000.f;
 			mPhysics.CastRay( 
-				mMainCamera->GetPosition(), look_dir,
+				mMainCamera->GetPosition(), look_dir, 
+				static_cast<int>( PhysicsGroup::RAY ),
 				[&, this]( bool is_hit, glm::vec3 hit_point, glm::vec3 hit_normal )
 				{
 					if( is_hit )
@@ -168,7 +174,8 @@ Player::HandleMouse( std::unordered_map<int, bool>& button_map )
 			auto look_dir = mMainCamera->GetLookDirection();
 			look_dir *= 1000.f;
 			mPhysics.CastRay( 
-				mMainCamera->GetPosition(), look_dir,
+				mMainCamera->GetPosition(), look_dir, 
+				static_cast<int>( PhysicsGroup::RAY ),
 				[&, this]( bool is_hit, glm::vec3 hit_point, glm::vec3 hit_normal )
 				{
 					if( is_hit )
@@ -215,7 +222,8 @@ Player::CastGroundCheckRay()
 	glm::vec3 to = from;
 	to.y -= PLAYER_CAPSULE_HEIGHT / 2.f + PLAYER_CAPSULE_RAIDUS + 1.f;
 	mPhysics.CastRay( 
-		std::move( from ), std::move( to ),
+		std::move( from ), std::move( to ), 
+		static_cast<int>( PhysicsGroup::RAY ),
 		[this]( bool is_hit, glm::vec3, glm::vec3 )
 		{
 			mIsGrounded = is_hit;

@@ -12,9 +12,11 @@
 #include "Renderer.h"
 #include "Camera.h"
 #include "Portal.h"
+#include "LevelConstants.h"
 
 using namespace portal;
 using namespace portal::physics;
+using namespace portal::level;
 
 namespace
 {
@@ -228,7 +230,13 @@ LevelController::ChangeLevelTo( const std::string& path )
 			wall.shader_name,
 			mRenderer.GetResources().GetTextureInfo( wall.texture_path )
 		);
-		wall.mCollisionBox = mPhysics->CreateBox( wall.position, { wall.width, wall.height, wall.depth }, Physics::PhysicsObject::Type::STATIC );
+		wall.mCollisionBox = mPhysics->CreateBox( 
+			wall.position, 
+			{ wall.width, wall.height, wall.depth }, 
+			Physics::PhysicsObject::Type::STATIC, 
+			static_cast<int>( PhysicsGroup::WALL ),
+			static_cast<int>( PhysicsGroup::PLAYER ) | static_cast<int>( PhysicsGroup::RAY )
+		);
 	}
 	mRenderer.UseCameraMatrix( mMainCamera.get() );
 }
@@ -433,8 +441,8 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 	glDepthMask( GL_TRUE );
 	glEnable(GL_DEPTH_TEST);
 	// 绘制正常的场景
-	RenderBaseScene( view_matrix, projection_matrix );
 	RenderSkybox( view_matrix, projection_matrix );
+	RenderBaseScene( view_matrix, projection_matrix );
 }
 
 void 
@@ -456,6 +464,7 @@ LevelController::RenderBaseScene( glm::mat4 view_matrix, glm::mat4 projection_ma
 			mRenderer.RenderOneoff( portal->GetFrameRenderable() );
 		}
 	}
+	RenderDebugInfo();
 }
 
 void

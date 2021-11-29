@@ -40,7 +40,7 @@ Physics::PhysicsObject::~PhysicsObject()
 }
 
 void 
-Physics::PhysicsObject::BuildRigidBody( glm::vec3 pos, btCollisionShape* collision_shape )
+Physics::PhysicsObject::BuildRigidBody( glm::vec3 pos, btCollisionShape* collision_shape, int group, int mask )
 {
 	btTransform box_transform;
 	box_transform.setIdentity();
@@ -61,7 +61,7 @@ Physics::PhysicsObject::BuildRigidBody( glm::vec3 pos, btCollisionShape* collisi
 	btRigidBody::btRigidBodyConstructionInfo rbInfo( mass, motion_state, collision_shape, local_intertia );
 	
 	mBody = std::make_unique<btRigidBody>( rbInfo );
-	mWorld.addRigidBody( mBody.get() );
+	mWorld.addRigidBody( mBody.get(), group, mask );
 }
 
 glm::vec3
@@ -111,14 +111,20 @@ Physics::PhysicsObject::SetImpluse( glm::vec3 force, glm::vec3 pos )
 	mBody->applyImpulse( { force.x, force.y, force.z }, { pos.x, pos.y, pos.z } );
 }
 
+void 
+Physics::PhysicsObject::Activate()
+{
+	mBody->activate( true );
+}
+
 ///
 /// Box implementation
 /// 
-Physics::Box::Box( glm::vec3 pos, glm::vec3 size, btDiscreteDynamicsWorld& world, Type type, Callback callback )
+Physics::Box::Box( glm::vec3 pos, glm::vec3 size, btDiscreteDynamicsWorld& world, Type type, int group, int mask, Callback callback )
 	: PhysicsObject( pos, world, type, std::move( callback ) )
 {
 	mShape = std::make_unique<btBoxShape>( btVector3( size.x / 2.f, size.y / 2.f, size.z / 2.f ) );
-	BuildRigidBody( std::move( pos ), mShape.get() );
+	BuildRigidBody( std::move( pos ), mShape.get(), group, mask );
 }
 
 Physics::Box::~Box()
@@ -127,11 +133,11 @@ Physics::Box::~Box()
 ///
 /// Capsule implementation
 /// 
-Physics::Capsule::Capsule( glm::vec3 pos, float raidus, float height, btDiscreteDynamicsWorld& world,Type type, Callback callback )
+Physics::Capsule::Capsule( glm::vec3 pos, float raidus, float height, btDiscreteDynamicsWorld& world,Type type, int group, int mask, Callback callback )
 	: PhysicsObject( pos, world, type, std::move( callback ) )
 {
 	mShape = std::make_unique<btCapsuleShape>( raidus, height );
-	BuildRigidBody( std::move( pos ), mShape.get() );
+	BuildRigidBody( std::move( pos ), mShape.get(), group, mask );
 }
 
 Physics::Capsule::~Capsule()
@@ -178,24 +184,24 @@ Physics::Update()
 }
 
 std::unique_ptr<Physics::Box>
-Physics::CreateBox( glm::vec3 pos, glm::vec3 size, PhysicsObject::Type type, physics::Callback callback )
+Physics::CreateBox( glm::vec3 pos, glm::vec3 size, PhysicsObject::Type type, int group, int mask, physics::Callback callback )
 {
-	return std::make_unique<Physics::Box>( pos, size, *mWorld, type, std::move( callback ) );
+	return std::make_unique<Physics::Box>( pos, size, *mWorld, type, group, mask, std::move( callback ) );
 }
 
 std::unique_ptr<Physics::Capsule>
-Physics::CreateCapsule( glm::vec3 pos, float raidus, float height, PhysicsObject::Type type, physics::Callback callback )
+Physics::CreateCapsule( glm::vec3 pos, float raidus, float height, PhysicsObject::Type type, int group, int mask, physics::Callback callback )
 {
-	return std::make_unique<Physics::Capsule>( pos, raidus, height, *mWorld, type, std::move( callback ) );
+	return std::make_unique<Physics::Capsule>( pos, raidus, height, *mWorld, type, group, mask, std::move( callback ) );
 }
  
 void 
-Physics::CastRay( glm::vec3 from, glm::vec3 to, std::function<void(bool, glm::vec3, glm::vec3)> callback )
+Physics::CastRay( glm::vec3 from, glm::vec3 to, int filter_group, std::function<void(bool, glm::vec3, glm::vec3)> callback )
 {
 	btVector3 from_v{ from.x, from.y, from.z };
 	btVector3 to_v{ to.x, to.y, to.z };
 	btCollisionWorld::ClosestRayResultCallback first_result( from_v, to_v );
-	first_result.m_flags |= btTriangleRaycastCallback::kF_FilterBackfaces;
+	first_result.m_collisionFilterGroup = filter_group;
 	mWorld->rayTest( from_v, to_v, first_result );
 
 	if( callback )

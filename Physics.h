@@ -110,6 +110,12 @@ namespace portal
 				/// 
 				void SetImpluse( glm::vec3 force, glm::vec3 pos );
 
+				///
+				/// 唤醒物体
+				/// 物体在完全静止时会进入睡眠，减少计算
+				/// 
+				void Activate();
+
 			protected:
 				///
 				/// 构造函数
@@ -141,7 +147,13 @@ namespace portal
 				/// @param collision_shape
 				///		btCollisionShape指针
 				/// 
-				void BuildRigidBody( glm::vec3 pos, btCollisionShape* collision_shape );
+				/// @param group
+				///		物体的分组
+				/// 
+				/// @param mask
+				///		物体的掩码，用于过滤碰撞
+				/// 
+				void BuildRigidBody( glm::vec3 pos, btCollisionShape* collision_shape, int group, int mask );
 
 				btDiscreteDynamicsWorld& mWorld;
 				Type mType;
@@ -171,6 +183,12 @@ namespace portal
 				/// 
 				/// @param type
 				///		刚体类型
+				///
+				/// @param group
+				///		物体的分组
+				/// 
+				/// @param mask
+				///		物体的掩码，用于过滤碰撞
 				/// 
 				/// @param callback
 				///		本物体发生碰撞时调用的回调函数，必须确保Update()有定期被调用
@@ -179,6 +197,8 @@ namespace portal
 					 glm::vec3 size, 
 					 btDiscreteDynamicsWorld& world,
 					 Type type,
+					 int group,
+					 int mask,
 					 physics::Callback callback );
 				~Box();
 			};
@@ -207,6 +227,12 @@ namespace portal
 				/// 
 				/// @param type
 				///		刚体类型
+				///
+				/// @param group
+				///		物体的分组
+				/// 
+				/// @param mask
+				///		物体的掩码，用于过滤碰撞
 				/// 
 				/// @param callback
 				///		本物体发生碰撞时调用的回调函数，必须确保Update()有定期被调用
@@ -216,6 +242,8 @@ namespace portal
 						 float height, 
 						 btDiscreteDynamicsWorld& world, 
 						 Type type,
+						 int group,
+						 int mask,
 						 physics::Callback callback );
 				~Capsule();
 			};
@@ -248,19 +276,19 @@ namespace portal
 			/// 
 			/// 参数请见Box构造函数
 			/// 
-			std::unique_ptr<Box> CreateBox( glm::vec3 pos, glm::vec3 size, PhysicsObject::Type type, physics::Callback callback = {} );
+			std::unique_ptr<Box> CreateBox( glm::vec3 pos, glm::vec3 size, PhysicsObject::Type type, int group, int mask = -1, physics::Callback callback = {} );
 			 
 			///
 			/// 创建胶囊
 			/// 
 			/// 参数请见Capsule构造函数
 			/// 
-			std::unique_ptr<Capsule> CreateCapsule( glm::vec3 pos, float raidus, float height, PhysicsObject::Type type, physics::Callback callback = {} );
+			std::unique_ptr<Capsule> CreateCapsule( glm::vec3 pos, float raidus, float height, PhysicsObject::Type type, int group, int mask = -1, physics::Callback callback = {} );
 
 			///
 			/// 发射射线
 			/// 
-			void CastRay( glm::vec3 from, glm::vec3 to, std::function<void(bool, glm::vec3, glm::vec3)> callback = nullptr );
+			void CastRay( glm::vec3 from, glm::vec3 to, int filter_group, std::function<void(bool, glm::vec3, glm::vec3)> callback = nullptr );
 
 			///
 			/// 渲染物理Debug信息
