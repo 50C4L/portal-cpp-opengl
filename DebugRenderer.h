@@ -43,18 +43,17 @@ namespace portal
 
 			virtual void drawLine(const btVector3& from1, const btVector3& to1, const btVector3& color1)
 			{
-				static const glm::vec4 color{ 1.f, 0.f, 0.f, 1.f };
 				mVertices.push_back( 
 					{ 
 						{ from1.x(), from1.y(), from1.z() },
-						color,
+						{ color1.x(), color1.y(), color1.z(), 1.f },
 						{}
 					} 
 				);
 				mVertices.push_back( 
 					{ 
 						{ to1.x(), to1.y(), to1.z() },
-						color,
+						{ color1.x(), color1.y(), color1.z(), 1.f },
 						{}
 					} 
 				);

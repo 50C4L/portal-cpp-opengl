@@ -45,7 +45,7 @@ void
 Player::Spawn( glm::vec3 position, std::shared_ptr<Camera> camera )
 {
 	mMainCamera = std::move( camera );
-	mMainCamera->SetPosition( { position.x, position.y + 4.5f, position.z } );
+	mMainCamera->SetPosition( { position.x, position.y + 4.f, position.z } );
 	mCollisionCapsule = mPhysics.CreateCapsule( 
 		position, 
 		PLAYER_CAPSULE_RAIDUS, PLAYER_CAPSULE_HEIGHT, 
@@ -74,7 +74,7 @@ Player::Update()
 	mPreviousUpdateTime = current_time;
 
 	auto pos = mCollisionCapsule->GetPosition();
-	pos.y += 4.5f;
+	pos.y += 4.f;
 	mMainCamera->SetPosition( std::move( pos ) );
 
 	CastGroundCheckRay();
