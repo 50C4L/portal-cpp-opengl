@@ -213,8 +213,8 @@ LevelController::ChangeLevelTo( const std::string& path )
 
 	mSkybox = std::make_unique<SceneSkyBox>( mRenderer.GetResources().GetTextureInfo( "SKYBOX" ) );
 	mSkybox->Rotate( 135.f, { 0.f, 1.f, 0.f } );
-	mPortals[PORTAL_1] = std::make_unique<Portal>( mRenderer.GetResources().GetTextureInfo( "resources/textures/blueportal.png" ), view_width, view_height );
-	mPortals[PORTAL_2] = std::make_unique<Portal>( mRenderer.GetResources().GetTextureInfo( "resources/textures/orangeportal.png" ), view_width, view_height );
+	mPortals[PORTAL_1] = std::make_unique<Portal>( mRenderer.GetResources().GetTextureInfo( "resources/textures/blueportal.png" ), *mPhysics );
+	mPortals[PORTAL_2] = std::make_unique<Portal>( mRenderer.GetResources().GetTextureInfo( "resources/textures/orangeportal.png" ), *mPhysics );
 	mPortals[PORTAL_1]->SetPair( mPortals[PORTAL_2].get() );
 	mPortals[PORTAL_2]->SetPair( mPortals[PORTAL_1].get() );
 
@@ -253,7 +253,7 @@ LevelController::Update()
 		mPhysics->Update();
 	}
 
-	UpdatePortalState();
+	//UpdatePortalState();
 }
 
 void 
@@ -279,7 +279,7 @@ LevelController::HandleMouseMove( int x, int y )
 void 
 LevelController::HandleMouseButton( std::unordered_map<int, bool>& button_map )
 {
-	mPlayer->HandleMouse( button_map );
+	mPlayer->HandleMouse( button_map, *mPortals[ PORTAL_1 ], *mPortals[ PORTAL_2 ] );
 }
 
 void
@@ -313,7 +313,7 @@ LevelController::UpdatePortalState()
 	{
 		if( portal_info[i].is_active )
 		{
-			mPortals[i]->UpdatePosition( portal_info[i].position, portal_info[i].face_dir );
+			mPortals[i]->PlaceAt( portal_info[i].position, portal_info[i].face_dir );
 		}
 	}
 }
@@ -351,7 +351,7 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 		glm::mat4 portal_view = portal->ConvertView( view_matrix );
 		// 因为新的虚拟摄像机在传送门后，为了不被传送门后的墙挡住视线，我们将投影矩阵的近裁切面设置在传送门的位置
 		glm::vec3 cam_pos = extract_view_postion_from_matrix( portal_view );
-		float distance_to_portal =  glm::length( cam_pos - portal->GetPairedPortal()->mPosition );
+		float distance_to_portal =  glm::length( cam_pos - portal->GetPairedPortal()->GetPosition() );
 		glm::mat4 portal_cam_proj_mat = 
 			glm::perspective( 
 				glm::radians( 90.f ),

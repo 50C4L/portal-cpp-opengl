@@ -6,7 +6,11 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "LevelConstants.h"
+
 using namespace portal;
+using namespace portal::physics;
+using namespace portal::level;
 
 namespace
 {
@@ -53,17 +57,52 @@ namespace
 		}
 		return vertices;
 	}
+
+	const float PORTAL_FRAME_UP_OFFSET = 2 * PORTAL_GUT_HEIGHT;
+	const float PORTAL_FRAM_RIGHT_OFFSET = 2 * PORTAL_GUT_WIDTH;
 }
 
-Portal::Portal( TextureInfo* texture, float view_width, float view_height )
+Portal::Portal( TextureInfo* texture, physics::Physics& physics )
 	: mFaceDir( 0.f, 0.f, 1.f )
-	, mPosition( 0.f, 0.f, 0.f )
+	, mPosition( 10.f, 10.f, 10.f )
 	, mOriginFaceDir( 0.f, 0.f, 1.f )
+	, mUpDir( 0.f, 1.f, 0.f )
+	, mRightDir( -1.f, 0.f, 0.f )
 	, mFrameRenderable( generate_portal_frame(), Renderer::PORTAL_FRAME_SHADER, texture )
 	, mHoleRenderable( generate_portal_ellipse_hole( PORTAL_GUT_WIDTH, PORTAL_GUT_HEIGHT ), Renderer::PORTAL_HOLE_SHADER, nullptr, Renderer::Renderable::DrawType::TRIANGLE_FANS )
 	, mHasBeenPlaced( false )
 	, mPairedPortal( nullptr )
-{}
+{
+	// 生成门框
+	mFrameBoxes.emplace_back(
+		physics.CreateBox( 
+			mPosition + mUpDir * PORTAL_FRAME_UP_OFFSET,
+			{ 6 * PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, 0.1f }, 
+			Physics::PhysicsObject::Type::STATIC, 
+			static_cast<int>( PhysicsGroup::PORTAL_FRAME ),
+			static_cast<int>( PhysicsGroup::PLAYER ) ) );
+	mFrameBoxes.emplace_back(
+		physics.CreateBox( 
+			mPosition +  mUpDir * -PORTAL_FRAME_UP_OFFSET,
+			{ 6 * PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, 0.1f }, 
+			Physics::PhysicsObject::Type::STATIC, 
+			static_cast<int>( PhysicsGroup::PORTAL_FRAME ),
+			static_cast<int>( PhysicsGroup::PLAYER ) ) );
+	mFrameBoxes.emplace_back(
+		physics.CreateBox( 
+			mPosition + mRightDir * -PORTAL_FRAM_RIGHT_OFFSET,
+			{ 2 * PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, 0.1f }, 
+			Physics::PhysicsObject::Type::STATIC, 
+			static_cast<int>( PhysicsGroup::PORTAL_FRAME ),
+			static_cast<int>( PhysicsGroup::PLAYER ) ) );
+	mFrameBoxes.emplace_back(
+		physics.CreateBox( 
+			mPosition + mRightDir * PORTAL_FRAM_RIGHT_OFFSET,
+			{ 2 * PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, 0.1f }, 
+			Physics::PhysicsObject::Type::STATIC, 
+			static_cast<int>( PhysicsGroup::PORTAL_FRAME ),
+			static_cast<int>( PhysicsGroup::PLAYER ) ) );
+}
 
 Portal::~Portal()
 {}
@@ -75,7 +114,7 @@ Portal::SetPair( Portal* paired_portal )
 }
 
 bool 
-Portal::UpdatePosition( glm::vec3 pos, glm::vec3 dir )
+Portal::PlaceAt( glm::vec3 pos, glm::vec3 dir )
 {
 	if( pos == mPosition && dir == mFaceDir )
 	{
@@ -85,18 +124,54 @@ Portal::UpdatePosition( glm::vec3 pos, glm::vec3 dir )
 	// 求它们之间的夹角
 	float theta = std::acos( glm::dot( mOriginFaceDir, dir ) );
 	// 求垂直于它们的向量用作转轴
-	glm::vec3 cross_product = glm::cross( mOriginFaceDir, dir );
-	cross_product = glm::normalize( cross_product );
+	glm::vec3 up_axis = glm::cross( mOriginFaceDir, dir );
+	up_axis = glm::normalize( up_axis );
 
 	mPosition = pos;
 	mFaceDir = dir;
+	mUpDir = up_axis;
+	mRightDir = glm::normalize( glm::cross( mFaceDir, mUpDir ) );
 
+	std::cout << "Hit nor (" << dir.x << ", " << dir.y << ", " << dir.z << ")\n";
+	std::cout << "mPosition (" << pos.x << ", " << pos.y << ", " << pos.z << ")\n";
+	std::cout << "mFaceDir (" << mFaceDir.x << ", " << mFaceDir.y << ", " << mFaceDir.z << ")\n";
+	std::cout << "mUpDir (" << mUpDir.x << ", " << mUpDir.y << ", " << mUpDir.z << ")\n";
+	std::cout << "mRightDir (" << mRightDir.x << ", " << mRightDir.y << ", " << mRightDir.z << ")\n";
+
+	// 根据上面求得的位置和旋转变量来更新门口和门面的模型矩阵
 	mFrameRenderable.Translate( pos + mFaceDir * 0.2f );
-	mFrameRenderable.Rotate( theta, cross_product );
+	mFrameRenderable.Rotate( theta, up_axis );
 	mHoleRenderable.Translate( pos + mFaceDir * 0.1f );
-	mHoleRenderable.Rotate( theta, cross_product );
+	mHoleRenderable.Rotate( theta, up_axis );
 
 	mHasBeenPlaced = true;
+	
+	// 确保门框也做同样的位移和旋转
+	for( size_t i = 0; i < mFrameBoxes.size(); i ++)
+	{
+		glm::mat4 trans( 1.f );
+		switch(i)
+		{
+		case 0:
+			trans = glm::translate( trans, pos + mUpDir * PORTAL_FRAME_UP_OFFSET );
+			break;
+		case 1:
+			trans = glm::translate( trans, pos + mUpDir * -PORTAL_FRAME_UP_OFFSET );
+			break;
+		case 2:
+			trans = glm::translate( trans, pos + mRightDir * -PORTAL_FRAM_RIGHT_OFFSET );
+			break;
+		case 3:
+			trans = glm::translate( trans, pos + mRightDir * PORTAL_FRAM_RIGHT_OFFSET );
+			break;
+		default:
+			// You are fucked if it hits here.
+			break;
+		}
+		trans = glm::rotate( trans, theta, up_axis );
+
+		mFrameBoxes[i]->SetTransform( std::move( trans ) );
+	}
 
 	return true;
 }
@@ -133,6 +208,12 @@ Portal*
 Portal::GetPairedPortal()
 {
 	return mPairedPortal;
+}
+
+glm::vec3 
+Portal::GetPosition()
+{
+	return mPosition;
 }
 
 glm::mat4 

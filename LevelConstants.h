@@ -10,6 +10,7 @@ namespace portal
 			RAY = 0x01,
 			PLAYER = 0x02,
 			WALL = 0x04,
+			PORTAL_FRAME = 0x08,
 		};
 	}
 }

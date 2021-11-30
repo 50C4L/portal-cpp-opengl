@@ -1,8 +1,10 @@
 ﻿#include "Physics.h"
-#include "DebugRenderer.h"
-#include "Renderer.h"
 
 #include <bullet/BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
+#include <glm/gtc/type_ptr.hpp>
+
+#include "DebugRenderer.h"
+#include "Renderer.h"
 
 using namespace portal;
 using namespace portal::physics;
@@ -23,7 +25,7 @@ Callback::~Callback()
 /// 
 Physics::PhysicsObject::PhysicsObject( glm::vec3 pos,
 									   btDiscreteDynamicsWorld& world, 
-									   Type type, 
+									   Type type,
 									   physics::Callback callback )
 	: mWorld( world )
 	, mType( type )
@@ -40,7 +42,7 @@ Physics::PhysicsObject::~PhysicsObject()
 }
 
 void 
-Physics::PhysicsObject::BuildRigidBody( glm::vec3 pos, btCollisionShape* collision_shape, int group, int mask )
+Physics::PhysicsObject::BuildRigidBody( glm::vec3 pos, btCollisionShape* collision_shape, int group, int mask, bool is_ghost )
 {
 	btTransform box_transform;
 	box_transform.setIdentity();
@@ -61,6 +63,10 @@ Physics::PhysicsObject::BuildRigidBody( glm::vec3 pos, btCollisionShape* collisi
 	btRigidBody::btRigidBodyConstructionInfo rbInfo( mass, motion_state, collision_shape, local_intertia );
 	
 	mBody = std::make_unique<btRigidBody>( rbInfo );
+	if( is_ghost )
+	{
+		mBody->setCollisionFlags( mBody->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE );
+	}
 	mWorld.addRigidBody( mBody.get(), group, mask );
 }
 
@@ -117,14 +123,37 @@ Physics::PhysicsObject::Activate()
 	mBody->activate( true );
 }
 
+void 
+Physics::PhysicsObject::SetTransform( glm::mat4 transform_mat )
+{
+	btTransform transform;
+	transform.setFromOpenGLMatrix( glm::value_ptr( transform_mat ) );
+	mBody->setWorldTransform( std::move( transform ) );
+}
+
+glm::mat4 
+Physics::PhysicsObject::GetTransform()
+{
+	btTransform transform = mBody->getWorldTransform();
+	float mat_val[16];
+	transform.getOpenGLMatrix( mat_val );
+	return glm::make_mat4x4( mat_val );
+}
+
+void 
+Physics::PhysicsObject::SetIgnoireCollisionWith( const btCollisionObject* obj, bool flag )
+{
+	mBody->setIgnoreCollisionCheck( obj, flag );
+}
+
 ///
 /// Box implementation
 /// 
-Physics::Box::Box( glm::vec3 pos, glm::vec3 size, btDiscreteDynamicsWorld& world, Type type, int group, int mask, Callback callback )
+Physics::Box::Box( glm::vec3 pos, glm::vec3 size, btDiscreteDynamicsWorld& world, Type type, int group, int mask, bool is_ghost, Callback callback )
 	: PhysicsObject( pos, world, type, std::move( callback ) )
 {
 	mShape = std::make_unique<btBoxShape>( btVector3( size.x / 2.f, size.y / 2.f, size.z / 2.f ) );
-	BuildRigidBody( std::move( pos ), mShape.get(), group, mask );
+	BuildRigidBody( std::move( pos ), mShape.get(), group, mask, is_ghost );
 }
 
 Physics::Box::~Box()
@@ -133,11 +162,11 @@ Physics::Box::~Box()
 ///
 /// Capsule implementation
 /// 
-Physics::Capsule::Capsule( glm::vec3 pos, float raidus, float height, btDiscreteDynamicsWorld& world,Type type, int group, int mask, Callback callback )
+Physics::Capsule::Capsule( glm::vec3 pos, float raidus, float height, btDiscreteDynamicsWorld& world,Type type, int group, int mask, bool is_ghost, Callback callback )
 	: PhysicsObject( pos, world, type, std::move( callback ) )
 {
 	mShape = std::make_unique<btCapsuleShape>( raidus, height );
-	BuildRigidBody( std::move( pos ), mShape.get(), group, mask );
+	BuildRigidBody( std::move( pos ), mShape.get(), group, mask, is_ghost );
 }
 
 Physics::Capsule::~Capsule()
@@ -184,19 +213,19 @@ Physics::Update()
 }
 
 std::unique_ptr<Physics::Box>
-Physics::CreateBox( glm::vec3 pos, glm::vec3 size, PhysicsObject::Type type, int group, int mask, physics::Callback callback )
+Physics::CreateBox( glm::vec3 pos, glm::vec3 size, PhysicsObject::Type type, int group, int mask, bool is_ghost, physics::Callback callback )
 {
-	return std::make_unique<Physics::Box>( pos, size, *mWorld, type, group, mask, std::move( callback ) );
+	return std::make_unique<Physics::Box>( pos, size, *mWorld, type, group, mask, is_ghost, std::move( callback ) );
 }
 
 std::unique_ptr<Physics::Capsule>
-Physics::CreateCapsule( glm::vec3 pos, float raidus, float height, PhysicsObject::Type type, int group, int mask, physics::Callback callback )
+Physics::CreateCapsule( glm::vec3 pos, float raidus, float height, PhysicsObject::Type type, int group, int mask, bool is_ghost, physics::Callback callback )
 {
-	return std::make_unique<Physics::Capsule>( pos, raidus, height, *mWorld, type, group, mask, std::move( callback ) );
+	return std::make_unique<Physics::Capsule>( pos, raidus, height, *mWorld, type, group, mask, is_ghost, std::move( callback ) );
 }
  
 void 
-Physics::CastRay( glm::vec3 from, glm::vec3 to, int filter_group, std::function<void(bool, glm::vec3, glm::vec3)> callback )
+Physics::CastRay( glm::vec3 from, glm::vec3 to, int filter_group, std::function<void(bool, glm::vec3, glm::vec3, const btCollisionObject* )> callback )
 {
 	btVector3 from_v{ from.x, from.y, from.z };
 	btVector3 to_v{ to.x, to.y, to.z };
@@ -207,9 +236,10 @@ Physics::CastRay( glm::vec3 from, glm::vec3 to, int filter_group, std::function<
 	if( callback )
 	{
 		callback( 
-			first_result.hasHit(), 
+			first_result.hasHit(),
 			{ first_result.m_hitPointWorld.x(), first_result.m_hitPointWorld.y(), first_result.m_hitPointWorld.z() },
-			{ first_result.m_hitNormalWorld.x(), first_result.m_hitNormalWorld.y(), first_result.m_hitNormalWorld.z() }
+			{ first_result.m_hitNormalWorld.x(), first_result.m_hitNormalWorld.y(), first_result.m_hitNormalWorld.z() },
+			first_result.m_collisionObject
 		);
 	}
 }
