@@ -195,6 +195,17 @@ Physics::PhysicsObject::GetCollisionObject()
 	return mBody.get();
 }
 
+AABB 
+Physics::PhysicsObject::GetAABB()
+{
+	btVector3 max, min;
+	mBody->getAabb( min, max );
+	return {
+		{ max.x(), max.y(), max.z() },
+		{ min.x(), min.y(), min.z() }
+	};
+}
+
 ///
 /// Box implementation
 /// 

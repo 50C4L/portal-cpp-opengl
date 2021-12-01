@@ -89,6 +89,8 @@ namespace portal
 		void Look( float yaw_angle, float pitch_angle );
 
 		const std::vector<PortalInfo>& GetPortalInfo() const;
+
+		void Teleport( glm::vec3 new_pos, glm::vec3 face_dir );
 		
 	private:
 		void CastGroundCheckRay();
@@ -115,6 +117,7 @@ namespace portal
 
 		bool mMouseLeftPressed = false;
 		bool mMouseRightPressed = false;
+		glm::vec3 mPosition;
 	};
 }
 

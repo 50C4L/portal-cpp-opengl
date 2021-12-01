@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "LevelConstants.h"
+#include "Player.h"
 
 using namespace portal;
 using namespace portal::physics;
@@ -76,8 +77,8 @@ Portal::Portal( TextureInfo* texture, physics::Physics& physics )
 	, mPairedPortal( nullptr )
 	, mPlayerPO( nullptr )
 	, mAttchedCO( nullptr )
+	, mPhysics( physics )
 {
-	// 生成门框
 	mFrameBoxes.emplace_back(
 		physics.CreateBox( 
 			mPosition + mUpDir * PORTAL_FRAME_UP_OFFSET,
@@ -107,13 +108,23 @@ Portal::Portal( TextureInfo* texture, physics::Physics& physics )
 			static_cast<int>( PhysicsGroup::PORTAL_FRAME ),
 			static_cast<int>( PhysicsGroup::PLAYER ) ) );
 
+	// 创建两个触发区
+	const bool is_ghost = true;
 	mEntryTrigger = physics.CreateBox( 
 			mPosition +  mFaceDir * PORTAL_ENTRY_TRIGGER_OFFSET,
 			{ 2 * PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, PORTAL_ENTRY_TRIGGER_DEPTH }, 
 			Physics::PhysicsObject::Type::STATIC, 
 			static_cast<int>( PhysicsGroup::PORTAL_FRAME ),
 			static_cast<int>( PhysicsGroup::PLAYER ),
-			true
+			is_ghost
+		);
+	mTeleportTrigger = physics.CreateBox( 
+			mPosition - mFaceDir * PORTAL_ENTRY_TRIGGER_OFFSET,
+			{ 2 * PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, PORTAL_ENTRY_TRIGGER_DEPTH }, 
+			Physics::PhysicsObject::Type::STATIC, 
+			static_cast<int>( PhysicsGroup::PORTAL_FRAME ),
+			static_cast<int>( PhysicsGroup::PLAYER ),
+			is_ghost
 		);
 }
 
@@ -188,11 +199,18 @@ Portal::PlaceAt( glm::vec3 pos, glm::vec3 dir, Physics::PhysicsObject* player_po
 
 		mFrameBoxes[i]->SetTransform( std::move( trans ) );
 	}
-
-	glm::mat4 trans( 1.f );
-	trans = glm::translate( trans, pos + mFaceDir * PORTAL_ENTRY_TRIGGER_OFFSET );
-	trans = glm::rotate( trans, theta, up_axis );
-	mEntryTrigger->SetTransform( std::move( trans ) );
+	{
+		glm::mat4 trans( 1.f );
+		trans = glm::translate( trans, pos + mFaceDir * PORTAL_ENTRY_TRIGGER_OFFSET );
+		trans = glm::rotate( trans, theta, up_axis );
+		mEntryTrigger->SetTransform( std::move( trans ) );
+	}
+	{
+		glm::mat4 trans( 1.f );
+		trans = glm::translate( trans, pos - mFaceDir * PORTAL_ENTRY_TRIGGER_OFFSET );
+		trans = glm::rotate( trans, theta, up_axis );
+		mTeleportTrigger->SetTransform( std::move( trans ) );
+	}
 
 	return true;
 }
@@ -258,7 +276,32 @@ Portal::Update()
 {
 	if( mHasBeenPlaced && mPlayerPO && mAttchedCO )
 	{
+		const bool is_on_entry = mPlayerPO->IsCollideWith( mEntryTrigger->GetCollisionObject() );
 		// 当玩家在传送门判定区内，关闭玩家与传送门附着面的碰撞检测，使得玩家可以“穿过”传送门
-		mPlayerPO->SetIgnoireCollisionWith( mAttchedCO, mPlayerPO->IsCollideWith( mEntryTrigger->GetCollisionObject() ) );
+		mPlayerPO->SetIgnoireCollisionWith( mAttchedCO, is_on_entry );
+		if( is_on_entry )
+		{
+			auto aabb = mTeleportTrigger->GetAABB();
+			if( aabb.IsContain( mPlayerPO->GetPosition() ) )
+			{
+				if( auto player_ptr = static_cast<Player*>( mPlayerPO->GetCollisionObject()->getUserPointer() ) )
+				{
+					glm::vec3 new_pos = mPairedPortal->GetPosition() + mPairedPortal->GetFaceDir() * 0.1f;
+					player_ptr->Teleport( std::move( new_pos ), mPairedPortal->GetFaceDir() );
+				}
+			}
+		}
 	}
+}
+
+glm::vec3 
+Portal::GetFaceDir()
+{
+	return mFaceDir;
+}
+
+glm::vec3 
+Portal::GetUpDir()
+{
+	return mUpDir;
 }

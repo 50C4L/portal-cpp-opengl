@@ -91,6 +91,9 @@ namespace portal
 		/// 
 		void Update();
 
+		glm::vec3 GetFaceDir();
+		glm::vec3 GetUpDir();
+
 	private:
 		glm::vec3 mFaceDir;                    ///< 传送门面向的方向
 		glm::vec3 mPosition;                   ///< 传送门位置
@@ -106,8 +109,11 @@ namespace portal
 		// 传送门。因此我们需要一圈的空气墙作为门框来挡住玩家
 		std::vector<std::unique_ptr<physics::Physics::Box>> mFrameBoxes;
 		std::unique_ptr<physics::Physics::Box> mEntryTrigger;
+		std::unique_ptr<physics::Physics::Box> mTeleportTrigger;
 		physics::Physics::PhysicsObject* mPlayerPO;
 		const btCollisionObject* mAttchedCO;
+
+		physics::Physics& mPhysics;
 	};
 }
 

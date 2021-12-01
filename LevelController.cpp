@@ -346,7 +346,7 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 			glm::perspective( 
 				glm::radians( 90.f ),
 				16.f / 9.f,
-				distance_to_portal - 0.5f,
+				distance_to_portal - 0.1f,
 				1000.f
 			);
 

@@ -17,6 +17,18 @@ namespace portal
 
 	namespace physics
 	{
+		struct AABB
+		{
+			glm::vec3 max;
+			glm::vec3 min;
+
+			bool IsContain( const glm::vec3& point )
+			{
+				return (point.x >= min.x && point.x <= max.x) &&
+					   (point.y >= min.y && point.y <= max.y) &&
+					   (point.z >= min.z && point.z <= max.z);
+			}
+		};
 
 		///
 		/// 物体碰撞回调
@@ -125,6 +137,8 @@ namespace portal
 				bool IsCollideWith( btCollisionObject* obj );
 
 				btCollisionObject* GetCollisionObject();
+
+				AABB GetAABB();
 
 			protected:
 				///

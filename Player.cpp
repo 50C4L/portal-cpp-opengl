@@ -17,6 +17,7 @@ namespace
 	const float PLAYER_AIR_DAMPING = 0.1f;
 	const float PLAYER_MAX_VELOCITY = 20.f;
 	const float PLAYER_JUMP_FORCE = 2.f;
+	const float PLAYER_CAMERA_OFFSET = 4.f;
 
 	const size_t PORTAL_1 = 0;
 	const size_t PORTAL_2 = 1;
@@ -60,6 +61,8 @@ Player::Spawn( glm::vec3 position, std::shared_ptr<Camera> camera )
 	mPreviousUpdateTime = std::chrono::steady_clock::now();
 	mPortalInfo.emplace_back( PortalInfo{} );
 	mPortalInfo.emplace_back( PortalInfo{} );
+
+	mCollisionCapsule->GetCollisionObject()->setUserPointer( static_cast<void*>( this ) );
 }
 
 void
@@ -75,7 +78,7 @@ Player::Update()
 	mPreviousUpdateTime = current_time;
 
 	auto pos = mCollisionCapsule->GetPosition();
-	pos.y += 4.f;
+	pos.y += PLAYER_CAMERA_OFFSET;
 	mMainCamera->SetPosition( std::move( pos ) );
 
 	CastGroundCheckRay();
@@ -205,12 +208,29 @@ Player::GetPortalInfo() const
 }
 
 void 
+Player::Teleport( glm::vec3 new_pos, glm::vec3 face_dir )
+{
+	glm::vec3 prev_v = mCollisionCapsule->GetLinearVelocity();
+	float theta = std::acos( glm::dot( prev_v, face_dir ) );
+	glm::vec3 p_axis = glm::normalize( glm::cross( prev_v, face_dir ) );
+	glm::vec3 plane = glm::cross( p_axis, prev_v );
+	glm::vec3 new_v = cos( theta ) * prev_v + sin( theta ) * plane;
+
+	mCollisionCapsule->SetPosition( std::move( new_pos ) );
+	//mCollisionCapsule->SetLinearVelocity( std::move( new_v ) );
+}
+
+void 
 Player::CastGroundCheckRay()
 {
 	// 当玩家胶囊发生碰撞时，我们在玩家头顶高一点点的位置往正下方发射一根射线。
 	// 射线会先击中玩家本身的胶囊，然后继续前进9个单位。
 	// 如果它继续击中另一个物体，表示玩家站在一个东西上，看下面OnGroundRayHit
 	auto pos = mCollisionCapsule->GetPosition();
+	//if( isnan( pos.x ) || isnan( pos.y ) || isnan( pos.z ) )
+	//{
+	//	return;
+	//}
 	glm::vec3 from{ 
 		pos.x, 
 		pos.y,
