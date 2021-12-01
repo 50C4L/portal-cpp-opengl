@@ -43,7 +43,7 @@ namespace portal
 		/// @return 
 		///		True表示有更新到
 		/// 
-		bool PlaceAt( glm::vec3 pos, glm::vec3 dir );
+		bool PlaceAt( glm::vec3 pos, glm::vec3 dir, physics::Physics::PhysicsObject* player_po, const btCollisionObject* attched_surface_co );
 
 		///
 		/// 获取门框和门面的渲染体
@@ -86,6 +86,11 @@ namespace portal
 		/// 
 		glm::mat4 ConvertView( const glm::mat4& view_matrix );
 
+		///
+		/// 每TICK调用让所有Trigger正常工作
+		/// 
+		void Update();
+
 	private:
 		glm::vec3 mFaceDir;                    ///< 传送门面向的方向
 		glm::vec3 mPosition;                   ///< 传送门位置
@@ -100,6 +105,9 @@ namespace portal
 		// 当传送门被放置后，如果玩家在传送门的门口区域内，传送门附着的墙壁不能与玩家发生碰撞玩家才能穿过
 		// 传送门。因此我们需要一圈的空气墙作为门框来挡住玩家
 		std::vector<std::unique_ptr<physics::Physics::Box>> mFrameBoxes;
+		std::unique_ptr<physics::Physics::Box> mEntryTrigger;
+		physics::Physics::PhysicsObject* mPlayerPO;
+		const btCollisionObject* mAttchedCO;
 	};
 }
 

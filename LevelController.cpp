@@ -253,7 +253,10 @@ LevelController::Update()
 		mPhysics->Update();
 	}
 
-	//UpdatePortalState();
+	for( auto& portal : mPortals )
+	{
+		portal->Update();
+	}
 }
 
 void 
@@ -302,19 +305,6 @@ LevelController::RenderDebugInfo()
 	if( mPhysics )
 	{
 		mPhysics->DebugRender();
-	}
-}
-
-void
-LevelController::UpdatePortalState()
-{
-	const auto& portal_info = mPlayer->GetPortalInfo();
-	for( int i = 0; i < portal_info.size(); i++ )
-	{
-		if( portal_info[i].is_active )
-		{
-			mPortals[i]->PlaceAt( portal_info[i].position, portal_info[i].face_dir );
-		}
 	}
 }
 

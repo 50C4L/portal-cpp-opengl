@@ -2,12 +2,44 @@
 
 #include <bullet/BulletCollision/NarrowPhaseCollision/btRaycastCallback.h>
 #include <glm/gtc/type_ptr.hpp>
+#include <iostream>
 
 #include "DebugRenderer.h"
 #include "Renderer.h"
 
 using namespace portal;
 using namespace portal::physics;
+
+namespace
+{
+	class PhysicsContactResultCallback : public btCollisionWorld::ContactResultCallback
+	{
+	public:
+		PhysicsContactResultCallback( std::function<void()> callback )
+			: mCallback( std::move( callback ) )
+		{}
+
+		virtual
+		btScalar
+		addSingleResult( btManifoldPoint& cp, 
+						 const btCollisionObjectWrapper* colObj0Wrap, 
+						 int partId0, 
+						 int index0, 
+						 const btCollisionObjectWrapper* colObj1Wrap, 
+						 int partId1, 
+						 int index1 )
+		{
+			if( mCallback )
+			{
+				mCallback();
+			}
+			return 0;
+		}
+
+	private:
+		std::function<void()> mCallback;
+	};
+}
 
 ///
 /// Callback implementation
@@ -65,7 +97,7 @@ Physics::PhysicsObject::BuildRigidBody( glm::vec3 pos, btCollisionShape* collisi
 	mBody = std::make_unique<btRigidBody>( rbInfo );
 	if( is_ghost )
 	{
-		mBody->setCollisionFlags( mBody->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE );
+		mBody->setCollisionFlags( btCollisionObject::CF_NO_CONTACT_RESPONSE );
 	}
 	mWorld.addRigidBody( mBody.get(), group, mask );
 }
@@ -144,6 +176,23 @@ void
 Physics::PhysicsObject::SetIgnoireCollisionWith( const btCollisionObject* obj, bool flag )
 {
 	mBody->setIgnoreCollisionCheck( obj, flag );
+}
+
+bool 
+Physics::PhysicsObject::IsCollideWith( btCollisionObject* obj )
+{
+	bool result = false;
+	PhysicsContactResultCallback callback(
+		[&](){ result = true; }
+	);
+	mWorld.contactPairTest( mBody.get(), obj, callback );
+	return result;
+}
+
+btCollisionObject* 
+Physics::PhysicsObject::GetCollisionObject()
+{
+	return mBody.get();
 }
 
 ///

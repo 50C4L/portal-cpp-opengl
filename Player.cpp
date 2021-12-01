@@ -3,6 +3,7 @@
 #include <iostream>
 #include "Camera.h"
 #include "LevelConstants.h"
+#include "Portal.h"
 
 using namespace portal;
 using namespace portal::physics;
@@ -51,7 +52,7 @@ Player::Spawn( glm::vec3 position, std::shared_ptr<Camera> camera )
 		PLAYER_CAPSULE_RAIDUS, PLAYER_CAPSULE_HEIGHT, 
 		Physics::PhysicsObject::Type::DYNAMIC,
 		static_cast<int>( PhysicsGroup::PLAYER ),
-		static_cast<int>( PhysicsGroup::WALL )
+		static_cast<int>( PhysicsGroup::WALL ) | static_cast<int>( PhysicsGroup::PORTAL_FRAME )
 	);
 	mCollisionCapsule->SetAngularFactor( { 0.f, 0.f, 0.f } );
 	mCollisionCapsule->SetDamping( PLAYER_AIR_DAMPING, 0.f );
@@ -135,13 +136,13 @@ Player::HandleKeys( std::unordered_map<unsigned int, bool>& key_map )
 		}
 		else
 		{
-			mCollisionCapsule->SetDamping( PLAYER_GROUND_DAMPING, 0.f );
+			mCollisionCapsule->SetDamping( PLAYER_GROUND_DAMPING, 0.9f );
 		}
 	}
 }
 
 void 
-Player::HandleMouse( std::unordered_map<int, bool>& button_map )
+Player::HandleMouse( std::unordered_map<int, bool>& button_map, Portal& portal_left, Portal& portal_right )
 {
 	if( mMouseLeftPressed != button_map[ 1 ] )
 	{
@@ -153,13 +154,11 @@ Player::HandleMouse( std::unordered_map<int, bool>& button_map )
 			mPhysics.CastRay( 
 				mMainCamera->GetPosition(), look_dir, 
 				static_cast<int>( PhysicsGroup::RAY ),
-				[&, this]( bool is_hit, glm::vec3 hit_point, glm::vec3 hit_normal )
+				[&, this]( bool is_hit, glm::vec3 hit_point, glm::vec3 hit_normal, const btCollisionObject* obj )
 				{
 					if( is_hit )
 					{
-						mPortalInfo[ PORTAL_1 ].is_active = true;
-						mPortalInfo[ PORTAL_1 ].position = hit_point;
-						mPortalInfo[ PORTAL_1 ].face_dir = hit_normal;
+						portal_left.PlaceAt( hit_point, hit_normal, mCollisionCapsule.get(), obj );
 					}
 				}
 			);
@@ -176,13 +175,11 @@ Player::HandleMouse( std::unordered_map<int, bool>& button_map )
 			mPhysics.CastRay( 
 				mMainCamera->GetPosition(), look_dir, 
 				static_cast<int>( PhysicsGroup::RAY ),
-				[&, this]( bool is_hit, glm::vec3 hit_point, glm::vec3 hit_normal )
+				[&, this]( bool is_hit, glm::vec3 hit_point, glm::vec3 hit_normal, const btCollisionObject* obj )
 				{
 					if( is_hit )
 					{
-						mPortalInfo[ PORTAL_2 ].is_active = true;
-						mPortalInfo[ PORTAL_2 ].position = hit_point;
-						mPortalInfo[ PORTAL_2 ].face_dir = hit_normal;
+						portal_right.PlaceAt( hit_point, hit_normal, mCollisionCapsule.get(), obj );
 					}
 				}
 			);
@@ -224,7 +221,7 @@ Player::CastGroundCheckRay()
 	mPhysics.CastRay( 
 		std::move( from ), std::move( to ), 
 		static_cast<int>( PhysicsGroup::RAY ),
-		[this]( bool is_hit, glm::vec3, glm::vec3 )
+		[this]( bool is_hit, glm::vec3, glm::vec3, const btCollisionObject* )
 		{
 			mIsGrounded = is_hit;
 		}

@@ -59,7 +59,9 @@ namespace
 	}
 
 	const float PORTAL_FRAME_UP_OFFSET = 2 * PORTAL_GUT_HEIGHT;
-	const float PORTAL_FRAM_RIGHT_OFFSET = 2 * PORTAL_GUT_WIDTH;
+	const float PORTAL_FRAME_RIGHT_OFFSET = 2 * PORTAL_GUT_WIDTH;
+	const float PORTAL_ENTRY_TRIGGER_DEPTH = 1.f;
+	const float PORTAL_ENTRY_TRIGGER_OFFSET = PORTAL_ENTRY_TRIGGER_DEPTH / 2;
 }
 
 Portal::Portal( TextureInfo* texture, physics::Physics& physics )
@@ -72,6 +74,8 @@ Portal::Portal( TextureInfo* texture, physics::Physics& physics )
 	, mHoleRenderable( generate_portal_ellipse_hole( PORTAL_GUT_WIDTH, PORTAL_GUT_HEIGHT ), Renderer::PORTAL_HOLE_SHADER, nullptr, Renderer::Renderable::DrawType::TRIANGLE_FANS )
 	, mHasBeenPlaced( false )
 	, mPairedPortal( nullptr )
+	, mPlayerPO( nullptr )
+	, mAttchedCO( nullptr )
 {
 	// 生成门框
 	mFrameBoxes.emplace_back(
@@ -90,18 +94,27 @@ Portal::Portal( TextureInfo* texture, physics::Physics& physics )
 			static_cast<int>( PhysicsGroup::PLAYER ) ) );
 	mFrameBoxes.emplace_back(
 		physics.CreateBox( 
-			mPosition + mRightDir * -PORTAL_FRAM_RIGHT_OFFSET,
+			mPosition + mRightDir * -PORTAL_FRAME_RIGHT_OFFSET,
 			{ 2 * PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, 0.1f }, 
 			Physics::PhysicsObject::Type::STATIC, 
 			static_cast<int>( PhysicsGroup::PORTAL_FRAME ),
 			static_cast<int>( PhysicsGroup::PLAYER ) ) );
 	mFrameBoxes.emplace_back(
 		physics.CreateBox( 
-			mPosition + mRightDir * PORTAL_FRAM_RIGHT_OFFSET,
+			mPosition + mRightDir * PORTAL_FRAME_RIGHT_OFFSET,
 			{ 2 * PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, 0.1f }, 
 			Physics::PhysicsObject::Type::STATIC, 
 			static_cast<int>( PhysicsGroup::PORTAL_FRAME ),
 			static_cast<int>( PhysicsGroup::PLAYER ) ) );
+
+	mEntryTrigger = physics.CreateBox( 
+			mPosition +  mFaceDir * PORTAL_ENTRY_TRIGGER_OFFSET,
+			{ 2 * PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, PORTAL_ENTRY_TRIGGER_DEPTH }, 
+			Physics::PhysicsObject::Type::STATIC, 
+			static_cast<int>( PhysicsGroup::PORTAL_FRAME ),
+			static_cast<int>( PhysicsGroup::PLAYER ),
+			true
+		);
 }
 
 Portal::~Portal()
@@ -114,12 +127,15 @@ Portal::SetPair( Portal* paired_portal )
 }
 
 bool 
-Portal::PlaceAt( glm::vec3 pos, glm::vec3 dir )
+Portal::PlaceAt( glm::vec3 pos, glm::vec3 dir, Physics::PhysicsObject* player_po, const btCollisionObject* attched_surface_co )
 {
-	if( pos == mPosition && dir == mFaceDir )
+	if( pos == mPosition && dir == mFaceDir || !player_po || !attched_surface_co )
 	{
 		return false;
 	}
+
+	mPlayerPO = player_po;
+	mAttchedCO = attched_surface_co;
 
 	// 求它们之间的夹角
 	float theta = std::acos( glm::dot( mOriginFaceDir, dir ) );
@@ -159,10 +175,10 @@ Portal::PlaceAt( glm::vec3 pos, glm::vec3 dir )
 			trans = glm::translate( trans, pos + mUpDir * -PORTAL_FRAME_UP_OFFSET );
 			break;
 		case 2:
-			trans = glm::translate( trans, pos + mRightDir * -PORTAL_FRAM_RIGHT_OFFSET );
+			trans = glm::translate( trans, pos + mRightDir * -PORTAL_FRAME_RIGHT_OFFSET );
 			break;
 		case 3:
-			trans = glm::translate( trans, pos + mRightDir * PORTAL_FRAM_RIGHT_OFFSET );
+			trans = glm::translate( trans, pos + mRightDir * PORTAL_FRAME_RIGHT_OFFSET );
 			break;
 		default:
 			// You are fucked if it hits here.
@@ -172,6 +188,11 @@ Portal::PlaceAt( glm::vec3 pos, glm::vec3 dir )
 
 		mFrameBoxes[i]->SetTransform( std::move( trans ) );
 	}
+
+	glm::mat4 trans( 1.f );
+	trans = glm::translate( trans, pos + mFaceDir * PORTAL_ENTRY_TRIGGER_OFFSET );
+	trans = glm::rotate( trans, theta, up_axis );
+	mEntryTrigger->SetTransform( std::move( trans ) );
 
 	return true;
 }
@@ -230,4 +251,14 @@ Portal::ConvertView( const glm::mat4& view_matrix )
 						   * glm::rotate( glm::mat4( 1.f ), glm::radians( 180.f ), glm::vec3( 0.f, 1.f, 0.f ) )
 						   * glm::inverse( mPairedPortal->GetHoleRenderable()->GetTransform() );
 	return final_view;
+}
+
+void 
+Portal::Update()
+{
+	if( mHasBeenPlaced && mPlayerPO && mAttchedCO )
+	{
+		// 当玩家在传送门判定区内，关闭玩家与传送门附着面的碰撞检测，使得玩家可以“穿过”传送门
+		mPlayerPO->SetIgnoireCollisionWith( mAttchedCO, mPlayerPO->IsCollideWith( mEntryTrigger->GetCollisionObject() ) );
+	}
 }

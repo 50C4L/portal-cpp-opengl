@@ -9,6 +9,7 @@
 namespace portal
 {
 	class Camera;
+	class Portal;
 
 	///
 	/// 简易玩家类
@@ -74,7 +75,7 @@ namespace portal
 		/// @param button_map
 		///		Reference to std::unordered_map<int, bool>
 		/// 
-		void HandleMouse( std::unordered_map<int, bool>& button_map );
+		void HandleMouse( std::unordered_map<int, bool>& button_map, Portal& portal_left, Portal& portal_right );
 
 		///
 		/// 改变观察方向

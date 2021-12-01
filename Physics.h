@@ -122,6 +122,10 @@ namespace portal
 
 				void SetIgnoireCollisionWith( const btCollisionObject* obj, bool flag );
 
+				bool IsCollideWith( btCollisionObject* obj );
+
+				btCollisionObject* GetCollisionObject();
+
 			protected:
 				///
 				/// 构造函数

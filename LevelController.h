@@ -73,7 +73,6 @@ namespace portal
 
 	private:
 		void RenderDebugInfo();
-		void UpdatePortalState();
 
 		void RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matrix, int current_recursion_level = 0 );
 		void RenderBaseScene( glm::mat4 view_matrix, glm::mat4 projection_matrix );

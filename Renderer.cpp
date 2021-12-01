@@ -216,14 +216,14 @@ void
 Renderer::Renderable::Translate( glm::vec3 offset )
 {
 	mIsDirty = true;
-	mTranslation += std::move( offset );
+	mTranslation = std::move( offset );
 }
 
 void 
 Renderer::Renderable::Rotate( float angle, glm::vec3 axis )
 {
 	mIsDirty = true;
-	mRotation += axis * angle;
+	mRotation = axis * angle;
 }
 
 glm::mat4
@@ -242,8 +242,6 @@ Renderer::Renderable::GetTransform()
 		trans = glm::rotate( trans, mRotation.z, { 0.f, 0.f, 1.f} );
 		mTransform = std::move( trans );
 		mIsDirty = false;
-		mTranslation = glm::vec3( 0.f );
-		mRotation = glm::vec3( 0.f );
 		return mTransform;
 	}
 }
