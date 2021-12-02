@@ -90,10 +90,10 @@ namespace portal
 
 		const std::vector<PortalInfo>& GetPortalInfo() const;
 
-		void Teleport( glm::vec3 new_pos, glm::vec3 face_dir );
+		void Teleport( glm::vec3 new_pos, glm::vec3 face_dir, glm::mat4 src_trans, glm::mat4 dst_trans );
 		
 	private:
-		void CastGroundCheckRay();
+		void CastGroundCheckRay( glm::vec3 pos );
 
 		physics::Physics& mPhysics;
 		std::unique_ptr<physics::Physics::Capsule> mCollisionCapsule; //< 胶囊碰撞体
@@ -117,7 +117,6 @@ namespace portal
 
 		bool mMouseLeftPressed = false;
 		bool mMouseRightPressed = false;
-		glm::vec3 mPosition;
 	};
 }
 

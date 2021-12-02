@@ -13,6 +13,7 @@
 #include "Camera.h"
 #include "Portal.h"
 #include "LevelConstants.h"
+#include "Utility.h"
 
 using namespace portal;
 using namespace portal::physics;
@@ -23,32 +24,6 @@ namespace
 	constexpr int PORTAL_1 = 0;
 	constexpr int PORTAL_2 = 1;
 	const int MAX_PORTAL_RECURSION = 1;
-
-	glm::vec3
-	extract_view_postion_from_matrix( const glm::mat4 view_matrix )
-	{
-		glm::mat4 model_view_t = glm::transpose( view_matrix );
-  
-		// Get plane normals 
-		glm::vec3 n1( model_view_t[0] );
-		glm::vec3 n2( model_view_t[1] );
-		glm::vec3 n3( model_view_t[2] );
-
-		// Get plane distances
-		float d1( model_view_t[0].w );
-		float d2( model_view_t[1].w );
-		float d3( model_view_t[2].w );
-
-		// Get the intersection of these 3 planes
-		glm::vec3 n2n3 = cross( n2, n3 );
-		glm::vec3 n3n1 = cross( n3, n1 );
-		glm::vec3 n1n2 = cross( n1, n2 );
-
-		glm::vec3 top = ( n2n3 * d1 ) + ( n3n1 * d2 ) + ( n1n2 * d3 );
-		float denom = dot( n1, n2n3 );
-
-		return top / -denom;
-	}
 }
 
 ///
@@ -338,15 +313,18 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 		mRenderer.RenderOneoff( portal->GetHoleRenderable() );
 
 		// 将当前的摄像机视图矩阵变换到配对的传送门后相对的位置
-		glm::mat4 portal_view = portal->ConvertView( view_matrix );
+		glm::mat4 portal_view = portal->ConvertView( 
+			view_matrix, 
+			portal->GetHoleRenderable()->GetTransform(),
+			portal->GetPairedPortal()->GetHoleRenderable()->GetTransform() );
 		// 因为新的虚拟摄像机在传送门后，为了不被传送门后的墙挡住视线，我们将投影矩阵的近裁切面设置在传送门的位置
-		glm::vec3 cam_pos = extract_view_postion_from_matrix( portal_view );
+		glm::vec3 cam_pos = utility::extract_view_postion_from_matrix( portal_view );
 		float distance_to_portal =  glm::length( cam_pos - portal->GetPairedPortal()->GetPosition() );
 		glm::mat4 portal_cam_proj_mat = 
 			glm::perspective( 
 				glm::radians( 90.f ),
 				16.f / 9.f,
-				distance_to_portal - 0.1f,
+				distance_to_portal - 1.1f,
 				1000.f
 			);
 

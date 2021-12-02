@@ -8,10 +8,12 @@
 
 #include "LevelConstants.h"
 #include "Player.h"
+#include "Utility.h"
 
 using namespace portal;
 using namespace portal::physics;
 using namespace portal::level;
+using namespace portal::utility;
 
 namespace
 {
@@ -59,8 +61,8 @@ namespace
 		return vertices;
 	}
 
-	const float PORTAL_FRAME_UP_OFFSET = 2 * PORTAL_GUT_HEIGHT;
-	const float PORTAL_FRAME_RIGHT_OFFSET = 2 * PORTAL_GUT_WIDTH;
+	const float PORTAL_FRAME_UP_OFFSET = 1.25f * PORTAL_GUT_HEIGHT;
+	const float PORTAL_FRAME_RIGHT_OFFSET = 1.5f * PORTAL_GUT_WIDTH;
 	const float PORTAL_ENTRY_TRIGGER_DEPTH = 1.f;
 	const float PORTAL_ENTRY_TRIGGER_OFFSET = PORTAL_ENTRY_TRIGGER_DEPTH / 2;
 }
@@ -77,33 +79,34 @@ Portal::Portal( TextureInfo* texture, physics::Physics& physics )
 	, mPairedPortal( nullptr )
 	, mPlayerPO( nullptr )
 	, mAttchedCO( nullptr )
+	, mIsPlayerDetected( false )
 	, mPhysics( physics )
 {
 	mFrameBoxes.emplace_back(
 		physics.CreateBox( 
 			mPosition + mUpDir * PORTAL_FRAME_UP_OFFSET,
-			{ 6 * PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, 0.1f }, 
+			{ 4 * PORTAL_GUT_WIDTH, PORTAL_GUT_HEIGHT / 2.f, 0.1f }, 
 			Physics::PhysicsObject::Type::STATIC, 
 			static_cast<int>( PhysicsGroup::PORTAL_FRAME ),
 			static_cast<int>( PhysicsGroup::PLAYER ) ) );
 	mFrameBoxes.emplace_back(
 		physics.CreateBox( 
 			mPosition +  mUpDir * -PORTAL_FRAME_UP_OFFSET,
-			{ 6 * PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, 0.1f }, 
+			{ 4 * PORTAL_GUT_WIDTH, PORTAL_GUT_HEIGHT / 2.f, 0.1f }, 
 			Physics::PhysicsObject::Type::STATIC, 
 			static_cast<int>( PhysicsGroup::PORTAL_FRAME ),
 			static_cast<int>( PhysicsGroup::PLAYER ) ) );
 	mFrameBoxes.emplace_back(
 		physics.CreateBox( 
 			mPosition + mRightDir * -PORTAL_FRAME_RIGHT_OFFSET,
-			{ 2 * PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, 0.1f }, 
+			{ PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, 0.1f }, 
 			Physics::PhysicsObject::Type::STATIC, 
 			static_cast<int>( PhysicsGroup::PORTAL_FRAME ),
 			static_cast<int>( PhysicsGroup::PLAYER ) ) );
 	mFrameBoxes.emplace_back(
 		physics.CreateBox( 
 			mPosition + mRightDir * PORTAL_FRAME_RIGHT_OFFSET,
-			{ 2 * PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, 0.1f }, 
+			{ PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, 0.1f }, 
 			Physics::PhysicsObject::Type::STATIC, 
 			static_cast<int>( PhysicsGroup::PORTAL_FRAME ),
 			static_cast<int>( PhysicsGroup::PLAYER ) ) );
@@ -111,8 +114,8 @@ Portal::Portal( TextureInfo* texture, physics::Physics& physics )
 	// 创建两个触发区
 	const bool is_ghost = true;
 	mEntryTrigger = physics.CreateBox( 
-			mPosition +  mFaceDir * PORTAL_ENTRY_TRIGGER_OFFSET,
-			{ 2 * PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, PORTAL_ENTRY_TRIGGER_DEPTH }, 
+			mPosition +  mFaceDir *  3.f * PORTAL_ENTRY_TRIGGER_OFFSET,
+			{ 2 * PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, 3.f * PORTAL_ENTRY_TRIGGER_DEPTH }, 
 			Physics::PhysicsObject::Type::STATIC, 
 			static_cast<int>( PhysicsGroup::PORTAL_FRAME ),
 			static_cast<int>( PhysicsGroup::PLAYER ),
@@ -140,36 +143,53 @@ Portal::SetPair( Portal* paired_portal )
 bool 
 Portal::PlaceAt( glm::vec3 pos, glm::vec3 dir, Physics::PhysicsObject* player_po, const btCollisionObject* attched_surface_co )
 {
-	if( pos == mPosition && dir == mFaceDir || !player_po || !attched_surface_co )
+	if( !player_po || !attched_surface_co || is_vector_has_nan_value( pos ) || is_vector_has_nan_value( dir ) )
 	{
 		return false;
 	}
 
 	mPlayerPO = player_po;
 	mAttchedCO = attched_surface_co;
+	dir = round_vector_to_zero( std::move( dir ) );
 
 	// 求它们之间的夹角
 	float theta = std::acos( glm::dot( mOriginFaceDir, dir ) );
 	// 求垂直于它们的向量用作转轴
-	glm::vec3 up_axis = glm::cross( mOriginFaceDir, dir );
-	up_axis = glm::normalize( up_axis );
+	std::cout << "Hit normal (" << dir.x << ", " << dir.y << ", " << dir.z << ")\n";
+	std::cout << "mOriginFaceDir (" << mOriginFaceDir.x << ", " << mOriginFaceDir.y << ", " << mOriginFaceDir.z << ")\n";
+	glm::vec3 rot_axis = mUpDir;
+	if( mOriginFaceDir != dir && mOriginFaceDir != dir * -1.f )
+	{
+		if( abs( dir.y ) >= abs( dir.z ) && abs( dir.y ) >= abs( dir.x ) )
+		{
+			mRightDir = glm::cross( mOriginFaceDir, dir );
+			mUpDir = glm::cross( mRightDir, dir  );
+			rot_axis = mRightDir;
+		}
+		else
+		{
+			mUpDir = glm::cross( mOriginFaceDir, dir );
+			mRightDir = glm::normalize( glm::cross( dir, mUpDir ) );
+			rot_axis = mUpDir;
+		}
+	}
+	else
+	{
+		mUpDir = { 0.f, 1.f, 0.f };
+		mRightDir = glm::normalize( glm::cross( dir, mUpDir ) );
+	}
 
 	mPosition = pos;
 	mFaceDir = dir;
-	mUpDir = up_axis;
-	mRightDir = glm::normalize( glm::cross( mFaceDir, mUpDir ) );
 
-	std::cout << "Hit nor (" << dir.x << ", " << dir.y << ", " << dir.z << ")\n";
-	std::cout << "mPosition (" << pos.x << ", " << pos.y << ", " << pos.z << ")\n";
-	std::cout << "mFaceDir (" << mFaceDir.x << ", " << mFaceDir.y << ", " << mFaceDir.z << ")\n";
 	std::cout << "mUpDir (" << mUpDir.x << ", " << mUpDir.y << ", " << mUpDir.z << ")\n";
 	std::cout << "mRightDir (" << mRightDir.x << ", " << mRightDir.y << ", " << mRightDir.z << ")\n";
 
 	// 根据上面求得的位置和旋转变量来更新门口和门面的模型矩阵
 	mFrameRenderable.Translate( pos + mFaceDir * 0.2f );
-	mFrameRenderable.Rotate( theta, up_axis );
+	mFrameRenderable.Rotate( theta, rot_axis );
 	mHoleRenderable.Translate( pos + mFaceDir * 0.1f );
-	mHoleRenderable.Rotate( theta, up_axis );
+	mHoleRenderable.Rotate( theta, rot_axis );
 
 	mHasBeenPlaced = true;
 	
@@ -195,20 +215,20 @@ Portal::PlaceAt( glm::vec3 pos, glm::vec3 dir, Physics::PhysicsObject* player_po
 			// You are fucked if it hits here.
 			break;
 		}
-		trans = glm::rotate( trans, theta, up_axis );
+		trans = glm::rotate( trans, theta, rot_axis );
 
 		mFrameBoxes[i]->SetTransform( std::move( trans ) );
 	}
 	{
 		glm::mat4 trans( 1.f );
 		trans = glm::translate( trans, pos + mFaceDir * PORTAL_ENTRY_TRIGGER_OFFSET );
-		trans = glm::rotate( trans, theta, up_axis );
+		trans = glm::rotate( trans, theta, rot_axis );
 		mEntryTrigger->SetTransform( std::move( trans ) );
 	}
 	{
 		glm::mat4 trans( 1.f );
 		trans = glm::translate( trans, pos - mFaceDir * PORTAL_ENTRY_TRIGGER_OFFSET );
-		trans = glm::rotate( trans, theta, up_axis );
+		trans = glm::rotate( trans, theta, rot_axis );
 		mTeleportTrigger->SetTransform( std::move( trans ) );
 	}
 
@@ -255,39 +275,47 @@ Portal::GetPosition()
 	return mPosition;
 }
 
+/*static*/
 glm::mat4 
-Portal::ConvertView( const glm::mat4& view_matrix )
+Portal::ConvertView( const glm::mat4& view_matrix, const glm::mat4& src_trans, const glm::mat4& dst_trans )
 {
-	if( !mPairedPortal )
-	{
-		std::cerr << "ERROR: Trying to convert portal view while the paired portal is invalid." << std::endl;
-		return view_matrix;
-	}
 	// 先将视图矩阵转换到本传送门的本地空间
-	glm::mat4 model_view = view_matrix * mHoleRenderable.GetTransform();
+	glm::mat4 model_view = view_matrix * src_trans;
 	glm::mat4 final_view = model_view
 						   * glm::rotate( glm::mat4( 1.f ), glm::radians( 180.f ), glm::vec3( 0.f, 1.f, 0.f ) )
-						   * glm::inverse( mPairedPortal->GetHoleRenderable()->GetTransform() );
+						   * glm::inverse( dst_trans );
 	return final_view;
 }
 
 void 
 Portal::Update()
 {
-	if( mHasBeenPlaced && mPlayerPO && mAttchedCO )
+	if( mHasBeenPlaced && mPairedPortal && mPairedPortal->HasBeenPlaced() && mPlayerPO )
 	{
-		const bool is_on_entry = mPlayerPO->IsCollideWith( mEntryTrigger->GetCollisionObject() );
-		// 当玩家在传送门判定区内，关闭玩家与传送门附着面的碰撞检测，使得玩家可以“穿过”传送门
-		mPlayerPO->SetIgnoireCollisionWith( mAttchedCO, is_on_entry );
-		if( is_on_entry )
+		mIsPlayerDetected = mEntryTrigger->GetAABB().IsContain( mPlayerPO->GetPosition() );
+		if( mAttchedCO )
+		{
+			// 当玩家在传送门判定区内，关闭玩家与传送门附着面的碰撞检测，使得玩家可以“穿过”传送门
+			// 当两个门在同一面墙时，玩家进入任意一个门的警戒区都会关闭与墙壁的碰撞
+			if( mAttchedCO == mPairedPortal->GetAttachedCollisionObject() && 
+				mIsPlayerDetected != mPairedPortal->IsPlayerDetected() )
+			{
+				mPlayerPO->SetIgnoireCollisionWith( mAttchedCO, true );
+			}
+			else
+			{
+				mPlayerPO->SetIgnoireCollisionWith( mAttchedCO, mIsPlayerDetected );
+			}
+		}
+		if( mIsPlayerDetected )
 		{
 			auto aabb = mTeleportTrigger->GetAABB();
 			if( aabb.IsContain( mPlayerPO->GetPosition() ) )
 			{
 				if( auto player_ptr = static_cast<Player*>( mPlayerPO->GetCollisionObject()->getUserPointer() ) )
 				{
-					glm::vec3 new_pos = mPairedPortal->GetPosition() + mPairedPortal->GetFaceDir() * 0.1f;
-					player_ptr->Teleport( std::move( new_pos ), mPairedPortal->GetFaceDir() );
+					glm::vec3 new_pos = mPairedPortal->GetPosition();
+					player_ptr->Teleport( std::move( new_pos ), mPairedPortal->GetFaceDir(), mHoleRenderable.GetTransform(), mPairedPortal->GetHoleRenderable()->GetTransform() );
 				}
 			}
 		}
@@ -304,4 +332,16 @@ glm::vec3
 Portal::GetUpDir()
 {
 	return mUpDir;
+}
+
+const btCollisionObject*
+Portal::GetAttachedCollisionObject()
+{
+	return mAttchedCO;
+}
+
+bool 
+Portal::IsPlayerDetected()
+{
+	return mIsPlayerDetected;
 }

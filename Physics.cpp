@@ -269,7 +269,7 @@ Physics::Update()
 	float delta_seconds = std::chrono::duration<float, std::milli>( current_time - mPreviousUpdateTimepoint ).count() / 1000.f;
 	mPreviousUpdateTimepoint = current_time;
 
-	mWorld->stepSimulation( delta_seconds, 1 );
+	mWorld->stepSimulation( delta_seconds, 10 );
 }
 
 std::unique_ptr<Physics::Box>

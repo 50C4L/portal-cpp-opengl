@@ -76,6 +76,14 @@ namespace portal
 		glm::vec3 GetPosition();
 
 		///
+		/// 每TICK调用让所有Trigger正常工作
+		/// 
+		void Update();
+
+		glm::vec3 GetFaceDir();
+		glm::vec3 GetUpDir();
+
+		///
 		/// 将提供的视图矩阵转换到配对的传送门相对位置的视图矩阵
 		/// 
 		/// @param view_matrix
@@ -84,15 +92,11 @@ namespace portal
 		/// @return
 		///		转换后配对传送门后的视图矩阵
 		/// 
-		glm::mat4 ConvertView( const glm::mat4& view_matrix );
+		static glm::mat4 ConvertView( const glm::mat4& view_matrix, const glm::mat4& src_trans, const glm::mat4& dst_trans );
 
-		///
-		/// 每TICK调用让所有Trigger正常工作
-		/// 
-		void Update();
+		const btCollisionObject* GetAttachedCollisionObject();
 
-		glm::vec3 GetFaceDir();
-		glm::vec3 GetUpDir();
+		bool IsPlayerDetected();
 
 	private:
 		glm::vec3 mFaceDir;                    ///< 传送门面向的方向
@@ -112,6 +116,7 @@ namespace portal
 		std::unique_ptr<physics::Physics::Box> mTeleportTrigger;
 		physics::Physics::PhysicsObject* mPlayerPO;
 		const btCollisionObject* mAttchedCO;
+		bool mIsPlayerDetected;
 
 		physics::Physics& mPhysics;
 	};

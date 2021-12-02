@@ -1,9 +1,13 @@
 ﻿#include "Player.h"
 
 #include <iostream>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/vector_angle.hpp>
+
 #include "Camera.h"
 #include "LevelConstants.h"
 #include "Portal.h"
+#include "Utility.h"
 
 using namespace portal;
 using namespace portal::physics;
@@ -78,14 +82,13 @@ Player::Update()
 	mPreviousUpdateTime = current_time;
 
 	auto pos = mCollisionCapsule->GetPosition();
-	pos.y += PLAYER_CAMERA_OFFSET;
-	mMainCamera->SetPosition( std::move( pos ) );
+	mMainCamera->SetPosition( { pos.x, pos.y + PLAYER_CAMERA_OFFSET, pos.z } );
 
-	CastGroundCheckRay();
-	if( !mIsGrounded && !mIsRunning )
+	//CastGroundCheckRay( pos );
+	/*if( !mIsGrounded && !mIsRunning )
 	{
 		mCollisionCapsule->SetDamping( PLAYER_AIR_DAMPING, 0.f );
-	}
+	}*/
 }
 
 void 
@@ -96,7 +99,7 @@ Player::HandleKeys( std::unordered_map<unsigned int, bool>& key_map )
 		return;
 	}
 
-	if( mMainCamera && mIsGrounded )
+	if( mMainCamera /*&& mIsGrounded*/ )
 	{
 		glm::vec3 forward_dir = mMainCamera->GetFrontDirection();
 		glm::vec3 right_dir = mMainCamera->GetRightDirection();
@@ -208,29 +211,44 @@ Player::GetPortalInfo() const
 }
 
 void 
-Player::Teleport( glm::vec3 new_pos, glm::vec3 face_dir )
+Player::Teleport( glm::vec3 new_pos, glm::vec3 face_dir, glm::mat4 src_trans, glm::mat4 dst_trans )
 {
-	glm::vec3 prev_v = mCollisionCapsule->GetLinearVelocity();
-	float theta = std::acos( glm::dot( prev_v, face_dir ) );
-	glm::vec3 p_axis = glm::normalize( glm::cross( prev_v, face_dir ) );
-	glm::vec3 plane = glm::cross( p_axis, prev_v );
-	glm::vec3 new_v = cos( theta ) * prev_v + sin( theta ) * plane;
+	//glm::mat4 warpped_view = Portal::ConvertView( mMainCamera->GetViewMatrix(), src_trans, dst_trans );
+	//glm::vec3 pos = utility::extract_view_postion_from_matrix( warpped_view );
+	//glm::vec3 cam_look_at = { warpped_view[0].y, warpped_view[1].y, warpped_view[2].y };
+	//glm::vec3 cam_look_dir = mMainCamera->GetLookDirection();
+	//std::cout << "Prev look (" << cam_look_dir.x << ", " << cam_look_dir.y << ", " << cam_look_dir.z << ")" << std::endl;
+	//std::cout << "Now Look to (" << cam_look_at.x << ", " << cam_look_at.y << ", " << cam_look_at.z << ")" << std::endl;
+	//float theta = std::acos( glm::dot( cam_look_dir, cam_look_at ) );
+	//theta *= 180.f/3.1415926f;
+	///*glm::vec3 prev_v = glm::transpose( glm::inverse( dst_trans ) ) * glm::vec4( mCollisionCapsule->GetLinearVelocity(), 1.f );
+	//float theta = std::acos( glm::dot( prev_v, face_dir ) );
+	//glm::vec3 p_axis = glm::normalize( glm::cross( prev_v, face_dir ) );
+	//glm::vec3 plane = glm::cross( p_axis, prev_v );
+	//glm::vec3 new_v = cos( theta ) * prev_v + sin( theta ) * plane;
+	//mCollisionCapsule->SetLinearVelocity( std::move( new_v ) );*/
 
-	mCollisionCapsule->SetPosition( std::move( new_pos ) );
-	//mCollisionCapsule->SetLinearVelocity( std::move( new_v ) );
+	////glm::vec3 cam_front = mMainCamera->GetFrontDirection();
+	////cam_front = glm::transpose( glm::inverse( dst_trans ) ) * glm::vec4( cam_front, 1.0 );
+	//////cam_front = glm::rotate( glm::mat4( 1.f ), glm::radians( 180.f ), glm::vec3( 0.f, 1.f, 0.f ) ) * glm::inverse( dst_trans ) * glm::vec4( cam_front, 1.0 );
+	////cam_front = glm::normalize( cam_front );
+	////std::cout << "Look at (" << cam_front.x << ", " << cam_front.y << ", " << cam_front.z << ")" << std::endl;
+	//
+	//std::cout << "Cam turned: " << theta << " degree.\n";
+	//Look( theta, 0 );
+	////mCollisionCapsule->SetPosition( std::move( new_pos ) );
+	//std::cout << "Warp to (" << pos.x << ", " << pos.y << ", " << pos.z << ")" << std::endl;
+	//pos. y -= PLAYER_CAMERA_OFFSET;
+	//pos += face_dir * 0.1f;
+	//mCollisionCapsule->SetPosition( std::move( pos ) );
 }
 
 void 
-Player::CastGroundCheckRay()
+Player::CastGroundCheckRay( glm::vec3 pos )
 {
 	// 当玩家胶囊发生碰撞时，我们在玩家头顶高一点点的位置往正下方发射一根射线。
 	// 射线会先击中玩家本身的胶囊，然后继续前进9个单位。
 	// 如果它继续击中另一个物体，表示玩家站在一个东西上，看下面OnGroundRayHit
-	auto pos = mCollisionCapsule->GetPosition();
-	//if( isnan( pos.x ) || isnan( pos.y ) || isnan( pos.z ) )
-	//{
-	//	return;
-	//}
 	glm::vec3 from{ 
 		pos.x, 
 		pos.y,
