@@ -7,6 +7,9 @@ namespace portal
 {
 	namespace utility
 	{
+		extern const float RAD_TO_DEG;
+		extern const float DEG_TO_RAD;
+
 		glm::vec3 extract_view_postion_from_matrix( const glm::mat4& view_matrix );
 
 		bool is_vector_has_nan_value( const glm::vec3& vec );

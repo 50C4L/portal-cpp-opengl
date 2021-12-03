@@ -92,11 +92,39 @@ namespace portal
 		/// @return
 		///		转换后配对传送门后的视图矩阵
 		/// 
-		static glm::mat4 ConvertView( const glm::mat4& view_matrix, const glm::mat4& src_trans, const glm::mat4& dst_trans );
+		glm::mat4 ConvertView( const glm::mat4& view_matrix );
 
+		///
+		/// 获取附着墙面的物理碰撞体
+		/// 
 		const btCollisionObject* GetAttachedCollisionObject();
 
+		///
+		/// 玩家是否在传送门前
+		/// 
 		bool IsPlayerDetected();
+
+		///
+		/// 将提供的点转换到出口的相对位置
+		/// 
+		/// @param point
+		///		要穿越的点（世界坐标）
+		/// 
+		glm::vec3 ConvertPointToOutPortal( glm::vec3 point );
+
+		///
+		/// 将提供的向量转换到出口的相对位置
+		/// 
+		/// @param direction
+		///		向量
+		/// 
+		/// @param old_start_pos
+		///		转换前的方向起始点
+		/// 
+		/// @param new_start_pos
+		///		转换后的方向起始点
+		/// 
+		glm::vec3 ConvertDirectionToOutPortal( glm::vec3 direction, glm::vec3 old_start_pos, glm::vec3 new_start_pos );
 
 	private:
 		glm::vec3 mFaceDir;                    ///< 传送门面向的方向

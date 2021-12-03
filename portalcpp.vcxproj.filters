@@ -88,5 +88,8 @@
     <ClInclude Include="Utility.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="Portalable.h">
+      <Filter>Source Files\gameplay</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -20,7 +20,7 @@ namespace
 	const float PLAYER_GROUND_DAMPING = 0.9f;
 	const float PLAYER_AIR_DAMPING = 0.1f;
 	const float PLAYER_MAX_VELOCITY = 20.f;
-	const float PLAYER_JUMP_FORCE = 2.f;
+	const float PLAYER_JUMP_FORCE = 700.f;
 	const float PLAYER_CAMERA_OFFSET = 4.f;
 
 	const size_t PORTAL_1 = 0;
@@ -34,13 +34,9 @@ namespace
 
 Player::Player( Physics& physics )
 	: mPhysics( physics )
-	, mIsActive( false )
+	, mPreviousYPos( 0.f )
 	, mIsGrounded( false )
-	, mPreviousUpdateTime( std::chrono::steady_clock::now() )
-	, mFallingAccumulatedSec( 0.f )
 	, mDownCastHitNumber( 0 )
-	, mMoveVelocity( 0.f )
-	, mMoveDirection( 0.f )
 	, mIsRunning( false )
 {}
 
@@ -50,6 +46,7 @@ Player::~Player()
 void 
 Player::Spawn( glm::vec3 position, std::shared_ptr<Camera> camera )
 {
+	mPreviousYPos = position.y;
 	mMainCamera = std::move( camera );
 	mMainCamera->SetPosition( { position.x, position.y + 4.f, position.z } );
 	mCollisionCapsule = mPhysics.CreateCapsule( 
@@ -61,10 +58,6 @@ Player::Spawn( glm::vec3 position, std::shared_ptr<Camera> camera )
 	);
 	mCollisionCapsule->SetAngularFactor( { 0.f, 0.f, 0.f } );
 	mCollisionCapsule->SetDamping( PLAYER_AIR_DAMPING, 0.f );
-	mIsActive = true;
-	mPreviousUpdateTime = std::chrono::steady_clock::now();
-	mPortalInfo.emplace_back( PortalInfo{} );
-	mPortalInfo.emplace_back( PortalInfo{} );
 
 	mCollisionCapsule->GetCollisionObject()->setUserPointer( static_cast<void*>( this ) );
 }
@@ -72,77 +65,72 @@ Player::Spawn( glm::vec3 position, std::shared_ptr<Camera> camera )
 void
 Player::Update()
 {
-	if( !mIsActive )
+	// 如果Y值没有变就当作我们站在地上
+	// TODO: 往下一个单位发射射线检测是否有碰撞体，这样更准确.
+	// 不过目前bullet raytest好像有问题，有时候返回的碰撞法线是NaN导致错误
+	auto new_pos = mCollisionCapsule->GetPosition();
+	mIsGrounded = abs( mPreviousYPos - new_pos.y ) <= 0.001;
+	mPreviousYPos = new_pos.y;
+
+	new_pos.y += PLAYER_CAMERA_OFFSET;
+	mMainCamera->UpdateCamera( 0.f, 0.f, new_pos - mMainCamera->GetPosition() );
+
+	if( !mIsGrounded && !mIsRunning )
 	{
-		return;
+		mCollisionCapsule->SetDamping( PLAYER_AIR_DAMPING, 0.2f );
 	}
-
-	auto current_time = std::chrono::steady_clock::now();
-	float delta_seconds = std::chrono::duration<float, std::milli>( current_time - mPreviousUpdateTime ).count() / 1000.f;
-	mPreviousUpdateTime = current_time;
-
-	auto pos = mCollisionCapsule->GetPosition();
-	mMainCamera->SetPosition( { pos.x, pos.y + PLAYER_CAMERA_OFFSET, pos.z } );
-
-	//CastGroundCheckRay( pos );
-	/*if( !mIsGrounded && !mIsRunning )
+	else
 	{
-		mCollisionCapsule->SetDamping( PLAYER_AIR_DAMPING, 0.f );
-	}*/
+		if( mIsGrounded )
+		{
+			mCollisionCapsule->SetDamping( PLAYER_GROUND_DAMPING, 0.95f );
+		}
+	}
 }
 
 void 
 Player::HandleKeys( std::unordered_map<unsigned int, bool>& key_map )
 {
-	if( !mIsActive )
+	if( mMainCamera && mIsGrounded )
 	{
-		return;
-	}
-
-	if( mMainCamera /*&& mIsGrounded*/ )
-	{
-		glm::vec3 forward_dir = mMainCamera->GetFrontDirection();
-		glm::vec3 right_dir = mMainCamera->GetRightDirection();
+		const glm::vec3 forward_dir = mMainCamera->GetFrontDirection();
+		const glm::vec3 right_dir = mMainCamera->GetRightDirection();
+		glm::vec3 move_dir{ 0.f };
 		if( key_map[ 'w' ] )
 		{
-			mMoveDirection += forward_dir;
+			move_dir += forward_dir;
 		}
 		if( key_map[ 's' ] )
 		{
-			mMoveDirection -= forward_dir;
+			move_dir -= forward_dir;
 		}
 		if( key_map[ 'a' ] )
 		{
-			mMoveDirection -= right_dir;
+			move_dir -= right_dir;
 		}
 		if( key_map[ 'd' ] )
 		{
-			mMoveDirection += right_dir;
+			move_dir += right_dir;
 		}
 		if( key_map[ ' ' ] )
 		{
 			mCollisionCapsule->SetImpluse( { 0.f, PLAYER_JUMP_FORCE, 0.f }, mCollisionCapsule->GetPosition() );
 		}
 
-		mIsRunning = key_map[ 'w' ] || key_map[ 's' ] || key_map[ 'a' ] || key_map[ 'd' ];
+		mIsRunning = move_dir != glm::vec3{ 0.f };
 
 		if( mIsRunning )
 		{
 			mCollisionCapsule->Activate();
 			mCollisionCapsule->SetDamping( 0.f, 0.f );
-			mMoveDirection = mMoveDirection == glm::vec3{ 0.f } ? mMoveDirection :glm::normalize( mMoveDirection );
-			mMoveVelocity = mMoveDirection * PLAYER_MAX_VELOCITY;
+			const glm::vec3 velocity = move_dir * PLAYER_MAX_VELOCITY;
 			mCollisionCapsule->SetLinearVelocity(
 				{
-					mMoveVelocity.x,
+					velocity.x,
 					mCollisionCapsule->GetLinearVelocity().y,
-					mMoveVelocity.z
+					velocity.z
 				}
 			);
-		}
-		else
-		{
-			mCollisionCapsule->SetDamping( PLAYER_GROUND_DAMPING, 0.9f );
 		}
 	}
 }
@@ -196,72 +184,32 @@ Player::HandleMouse( std::unordered_map<int, bool>& button_map, Portal& portal_l
 void
 Player::Look( float yaw_angle, float pitch_angle )
 {
-	if( !mIsActive )
-	{
-		return;
-	}
-
-	mMainCamera->Look( yaw_angle, pitch_angle );
-}
-
-const std::vector<Player::PortalInfo>& 
-Player::GetPortalInfo() const
-{
-	return mPortalInfo;
+	mMainCamera->UpdateCamera( pitch_angle, yaw_angle, glm::vec3( 0.f ) );
 }
 
 void 
-Player::Teleport( glm::vec3 new_pos, glm::vec3 face_dir, glm::mat4 src_trans, glm::mat4 dst_trans )
+Player::Teleport( Portal& in_portal )
 {
-	//glm::mat4 warpped_view = Portal::ConvertView( mMainCamera->GetViewMatrix(), src_trans, dst_trans );
-	//glm::vec3 pos = utility::extract_view_postion_from_matrix( warpped_view );
-	//glm::vec3 cam_look_at = { warpped_view[0].y, warpped_view[1].y, warpped_view[2].y };
-	//glm::vec3 cam_look_dir = mMainCamera->GetLookDirection();
-	//std::cout << "Prev look (" << cam_look_dir.x << ", " << cam_look_dir.y << ", " << cam_look_dir.z << ")" << std::endl;
-	//std::cout << "Now Look to (" << cam_look_at.x << ", " << cam_look_at.y << ", " << cam_look_at.z << ")" << std::endl;
-	//float theta = std::acos( glm::dot( cam_look_dir, cam_look_at ) );
-	//theta *= 180.f/3.1415926f;
-	///*glm::vec3 prev_v = glm::transpose( glm::inverse( dst_trans ) ) * glm::vec4( mCollisionCapsule->GetLinearVelocity(), 1.f );
-	//float theta = std::acos( glm::dot( prev_v, face_dir ) );
-	//glm::vec3 p_axis = glm::normalize( glm::cross( prev_v, face_dir ) );
-	//glm::vec3 plane = glm::cross( p_axis, prev_v );
-	//glm::vec3 new_v = cos( theta ) * prev_v + sin( theta ) * plane;
-	//mCollisionCapsule->SetLinearVelocity( std::move( new_v ) );*/
+	// 计算传送后的视图矩阵
+	glm::mat4 warpped_view = in_portal.ConvertView( mMainCamera->GetViewMatrix() );
+	// 从视图矩阵获取摄像机位置
+	glm::vec3 pos = utility::extract_view_postion_from_matrix( warpped_view );
+	mMainCamera->SetPosition( pos );
 
-	////glm::vec3 cam_front = mMainCamera->GetFrontDirection();
-	////cam_front = glm::transpose( glm::inverse( dst_trans ) ) * glm::vec4( cam_front, 1.0 );
-	//////cam_front = glm::rotate( glm::mat4( 1.f ), glm::radians( 180.f ), glm::vec3( 0.f, 1.f, 0.f ) ) * glm::inverse( dst_trans ) * glm::vec4( cam_front, 1.0 );
-	////cam_front = glm::normalize( cam_front );
-	////std::cout << "Look at (" << cam_front.x << ", " << cam_front.y << ", " << cam_front.z << ")" << std::endl;
-	//
-	//std::cout << "Cam turned: " << theta << " degree.\n";
-	//Look( theta, 0 );
-	////mCollisionCapsule->SetPosition( std::move( new_pos ) );
-	//std::cout << "Warp to (" << pos.x << ", " << pos.y << ", " << pos.z << ")" << std::endl;
-	//pos. y -= PLAYER_CAMERA_OFFSET;
-	//pos += face_dir * 0.1f;
-	//mCollisionCapsule->SetPosition( std::move( pos ) );
-}
+	// 计算传送后的摄像机焦点
+	glm::vec3 target = mMainCamera->GetTarget();
+	mMainCamera->SetTarget( in_portal.ConvertPointToOutPortal( std::move( target ) ) );
 
-void 
-Player::CastGroundCheckRay( glm::vec3 pos )
-{
-	// 当玩家胶囊发生碰撞时，我们在玩家头顶高一点点的位置往正下方发射一根射线。
-	// 射线会先击中玩家本身的胶囊，然后继续前进9个单位。
-	// 如果它继续击中另一个物体，表示玩家站在一个东西上，看下面OnGroundRayHit
-	glm::vec3 from{ 
-		pos.x, 
-		pos.y,
-		pos.z
-	};
-	glm::vec3 to = from;
-	to.y -= PLAYER_CAPSULE_HEIGHT / 2.f + PLAYER_CAPSULE_RAIDUS + 1.f;
-	mPhysics.CastRay( 
-		std::move( from ), std::move( to ), 
-		static_cast<int>( PhysicsGroup::RAY ),
-		[this]( bool is_hit, glm::vec3, glm::vec3, const btCollisionObject* )
-		{
-			mIsGrounded = is_hit;
-		}
-	);
+	// 根据新的摄像机位置计算新的碰撞体位置
+	pos.y -= PLAYER_CAMERA_OFFSET;
+	pos += in_portal.GetPairedPortal()->GetFaceDir() * 0.1f;
+	glm::vec3 prev_pos = mCollisionCapsule->GetPosition();
+	mCollisionCapsule->SetPosition( pos );
+
+	// 传送后保持玩家的线性运动惯性
+	// 将方向根据出口的方向作出转换
+	glm::vec3 velocity = mCollisionCapsule->GetLinearVelocity();
+	velocity = in_portal.ConvertDirectionToOutPortal( std::move( velocity ), std::move( prev_pos ), std::move( pos ) );
+	velocity *= 1.f - mCollisionCapsule->GetLinearDamping();
+	mCollisionCapsule->SetLinearVelocity( std::move( velocity ) );
 }

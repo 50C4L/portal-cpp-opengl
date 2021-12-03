@@ -168,6 +168,7 @@
     <ClInclude Include="Physics.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Portal.h" />
+    <ClInclude Include="Portalable.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="ScenePrimitives.h" />
     <ClInclude Include="Utility.h" />

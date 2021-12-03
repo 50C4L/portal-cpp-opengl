@@ -111,6 +111,7 @@ namespace portal
 				///		角速度阻力
 				/// 
 				void SetDamping( float linear, float angular );
+				float GetLinearDamping();
 
 				///
 				/// 施加冲击力

@@ -81,7 +81,7 @@ Physics::PhysicsObject::BuildRigidBody( glm::vec3 pos, btCollisionShape* collisi
 	box_transform.setOrigin( btVector3( pos.x, pos.y, pos.z ) );
 	btDefaultMotionState* motion_state = new btDefaultMotionState( box_transform );
 
-	btScalar mass = 1.f;
+	btScalar mass = 80.f;
 	btVector3 local_intertia( 0.f, 0.f, 0.f );
 	if( mType == Type::STATIC )
 	{
@@ -132,6 +132,12 @@ void
 Physics::PhysicsObject::SetDamping( float linear, float angular )
 {
 	mBody->setDamping( linear, angular );
+}
+
+float 
+Physics::PhysicsObject::GetLinearDamping()
+{
+	return mBody->getLinearDamping();
 }
 
 void 

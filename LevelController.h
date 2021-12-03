@@ -1,4 +1,4 @@
-#ifndef _LEVEL_CONTROLLER_H
+﻿#ifndef _LEVEL_CONTROLLER_H
 #define _LEVEL_CONTROLLER_H
 
 #include <vector>
@@ -18,12 +18,20 @@ namespace portal
 	class Camera;
 	class Portal;
 
+	///
+	/// 简单关卡控制器
+	/// 加载关卡和Gameplay逻辑都在里面
+	/// TODO: Gameplay逻辑应该独立出来
+	/// 
 	class LevelController
 	{
 	public:
 		class Level
 		{
 		public:
+			///
+			/// 关卡组成只有墙，所以就写这里了
+			/// 
 			struct Wall
 			{
 				glm::vec3 position = glm::vec3( 0.f );
@@ -40,13 +48,19 @@ namespace portal
 			Level();
 			~Level() = default;
 
+			/// 关卡不能被Copy
 			Level( const Level& ) = delete;
 			Level operator=( const Level& ) = delete;
 
+			///
+			/// 加墙，读取关卡文件时使用
+			/// 
 			void AddWall( Wall&& wall );
-
 			std::vector<Wall>& GetWalls();
 
+			///
+			/// 设置玩家出生点，读取关卡文件时使用
+			/// 
 			void SetSpawn( glm::vec3 point );
 			glm::vec3 GetSpawn() const;
 

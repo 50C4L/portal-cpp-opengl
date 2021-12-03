@@ -5,6 +5,7 @@
 #include <chrono>
 
 #include "Physics.h"
+#include "Portalable.h"
 
 namespace portal
 {
@@ -18,7 +19,7 @@ namespace portal
 	/// WASD控制玩家四方向移动，空格键跳跃。
 	/// 左键在目标表面开启传送门1（蓝色），右键传送门2（橙色）
 	/// 
-	class Player
+	class Player : public Portalable
 	{
 	public:
 		struct PortalInfo
@@ -29,21 +30,12 @@ namespace portal
 		};
 
 		///
-		/// 移动方向
-		/// 
-		enum class MoveDirection
-		{
-			FORWARD,
-			BACKWARD,
-			LEFT,
-			RIGHT
-		};
-
-		///
 		/// 构造函数
 		/// 
 		Player( physics::Physics& physics );
 		~Player();
+
+		virtual void Teleport( Portal& in_portal ) override;
 
 		///
 		/// 玩家出生到指定地点并初始化
@@ -87,33 +79,18 @@ namespace portal
 		///		水平角度
 		/// 
 		void Look( float yaw_angle, float pitch_angle );
-
-		const std::vector<PortalInfo>& GetPortalInfo() const;
-
-		void Teleport( glm::vec3 new_pos, glm::vec3 face_dir, glm::mat4 src_trans, glm::mat4 dst_trans );
 		
 	private:
-		void CastGroundCheckRay( glm::vec3 pos );
-
 		physics::Physics& mPhysics;
 		std::unique_ptr<physics::Physics::Capsule> mCollisionCapsule; //< 胶囊碰撞体
-		bool mIsActive;    //< 是否被激活，玩家只有在调用Spawn()出生后才会被激活
+		float mPreviousYPos;
 		bool mIsGrounded;  //< 玩家是否站在“地面”上
 
-		// time
-		std::chrono::steady_clock::time_point mPreviousUpdateTime;
-		float mFallingAccumulatedSec;
-
 		// 地面检测
-		//std::unique_ptr<physics::Raycast> mGroudDetectionRay; //< 往正下方发射的射线
 		int mDownCastHitNumber; //< 地面射线击中物体的次数
 
 		std::shared_ptr<Camera> mMainCamera;
-		glm::vec3 mMoveVelocity;             //< 移动速度
-		glm::vec3 mMoveDirection;            //< 累积每秒移动变量
 		bool mIsRunning;                     //< 是否在跑步
-
-		std::vector<PortalInfo> mPortalInfo;
 
 		bool mMouseLeftPressed = false;
 		bool mMouseRightPressed = false;

@@ -181,10 +181,10 @@ LevelController::ChangeLevelTo( const std::string& path )
 	auto view_size = mRenderer.GetViewportSize();
 	const float view_width = static_cast<float>( view_size.x );
 	const float view_height = static_cast<float>( view_size.y );
-	mMainCamera = std::make_shared<Camera>( view_width, view_height, Camera::Type::FPS );
+	mMainCamera = std::make_shared<Camera>( view_width, view_height );
 	mMainCamProjMat = mMainCamera->GetProjectionMatrix();
 	mPlayer = std::make_unique<Player>( *mPhysics );
-	mPlayer->Spawn( { 0.f, 20.f, 0.f }, mMainCamera );
+	mPlayer->Spawn( mCurrentLevel->GetSpawn(), mMainCamera );
 
 	mSkybox = std::make_unique<SceneSkyBox>( mRenderer.GetResources().GetTextureInfo( "SKYBOX" ) );
 	mSkybox->Rotate( 135.f, { 0.f, 1.f, 0.f } );
@@ -243,7 +243,7 @@ LevelController::HandleKeys( std::unordered_map<unsigned int, bool>& key_map )
 void 
 LevelController::HandleMouseMove( int x, int y )
 {
-	float x_offset = static_cast<float>( x - mMouseX );
+	float x_offset = static_cast<float>( mMouseX - x );
 	float y_offset = static_cast<float>( mMouseY - y );
 	mMouseX = x;
 	mMouseY = y;
@@ -313,10 +313,7 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 		mRenderer.RenderOneoff( portal->GetHoleRenderable() );
 
 		// 将当前的摄像机视图矩阵变换到配对的传送门后相对的位置
-		glm::mat4 portal_view = portal->ConvertView( 
-			view_matrix, 
-			portal->GetHoleRenderable()->GetTransform(),
-			portal->GetPairedPortal()->GetHoleRenderable()->GetTransform() );
+		glm::mat4 portal_view = portal->ConvertView( view_matrix );
 		// 因为新的虚拟摄像机在传送门后，为了不被传送门后的墙挡住视线，我们将投影矩阵的近裁切面设置在传送门的位置
 		glm::vec3 cam_pos = utility::extract_view_postion_from_matrix( portal_view );
 		float distance_to_portal =  glm::length( cam_pos - portal->GetPairedPortal()->GetPosition() );
@@ -324,7 +321,7 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 			glm::perspective( 
 				glm::radians( 90.f ),
 				16.f / 9.f,
-				distance_to_portal - 1.1f,
+				distance_to_portal,
 				1000.f
 			);
 
@@ -411,6 +408,10 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 	// 绘制正常的场景
 	RenderSkybox( view_matrix, projection_matrix );
 	RenderBaseScene( view_matrix, projection_matrix );
+	if( current_recursion_level != 0 )
+	{
+		RenderDebugInfo();
+	}
 }
 
 void 
@@ -432,7 +433,6 @@ LevelController::RenderBaseScene( glm::mat4 view_matrix, glm::mat4 projection_ma
 			mRenderer.RenderOneoff( portal->GetFrameRenderable() );
 		}
 	}
-	RenderDebugInfo();
 }
 
 void

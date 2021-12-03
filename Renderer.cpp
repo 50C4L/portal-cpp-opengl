@@ -401,6 +401,7 @@ Renderer::Renderer()
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA ); 
 
 	// 编译内置shader
+	// TODO: 从文件加载Shader
 	if( !mResources->CompileShader( DEFAULT_SHADER, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER ) )
 	{
 		std::cerr << "ERROR: Failed to compile default shaders." << std::endl;

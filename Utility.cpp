@@ -1,5 +1,11 @@
 #include "Utility.h"
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
+const float portal::utility::RAD_TO_DEG = 180.f / static_cast<float>( M_PI );
+const float portal::utility::DEG_TO_RAD = static_cast<float>( M_PI ) / 180.f;
+
 glm::vec3 
 portal::utility::extract_view_postion_from_matrix( const glm::mat4& view_matrix )
 {
