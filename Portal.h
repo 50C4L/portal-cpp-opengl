@@ -6,6 +6,7 @@
 
 namespace portal
 {
+	class Portalable;
 	///
 	/// 传送门本身分为两部分
 	/// 一部分时门框，只是一个带透明纸的贴图
@@ -43,7 +44,7 @@ namespace portal
 		/// @return 
 		///		True表示有更新到
 		/// 
-		bool PlaceAt( glm::vec3 pos, glm::vec3 dir, physics::Physics::PhysicsObject* player_po, const btCollisionObject* attched_surface_co );
+		bool PlaceAt( glm::vec3 pos, glm::vec3 dir, const btCollisionObject* attched_surface_co );
 
 		///
 		/// 获取门框和门面的渲染体
@@ -75,10 +76,9 @@ namespace portal
 		/// 
 		glm::vec3 GetPosition();
 
-		///
-		/// 每TICK调用让所有Trigger正常工作
-		/// 
-		void Update();
+
+		void CheckPortalable( Portalable* portalable );
+		bool IsPortalableEntering( Portalable* portalable );
 
 		glm::vec3 GetFaceDir();
 		glm::vec3 GetUpDir();
@@ -98,11 +98,6 @@ namespace portal
 		/// 获取附着墙面的物理碰撞体
 		/// 
 		const btCollisionObject* GetAttachedCollisionObject();
-
-		///
-		/// 玩家是否在传送门前
-		/// 
-		bool IsPlayerDetected();
 
 		///
 		/// 将提供的点转换到出口的相对位置
@@ -142,9 +137,7 @@ namespace portal
 		std::vector<std::unique_ptr<physics::Physics::Box>> mFrameBoxes;
 		std::unique_ptr<physics::Physics::Box> mEntryTrigger;
 		std::unique_ptr<physics::Physics::Box> mTeleportTrigger;
-		physics::Physics::PhysicsObject* mPlayerPO;
 		const btCollisionObject* mAttchedCO;
-		bool mIsPlayerDetected;
 
 		physics::Physics& mPhysics;
 	};

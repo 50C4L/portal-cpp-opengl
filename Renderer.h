@@ -198,6 +198,8 @@ namespace portal
 			std::string GetShaderName() const;
 			TextureInfo* GetTexture() const;
 			DrawType GetDrawType() const;
+
+			void SetTransform( glm::mat4 trans );
 			glm::mat4 GetTransform();
 
 		private:

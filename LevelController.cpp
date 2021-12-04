@@ -14,6 +14,8 @@
 #include "Portal.h"
 #include "LevelConstants.h"
 #include "Utility.h"
+#include "DynamicBox.h"
+#include "Player.h"
 
 using namespace portal;
 using namespace portal::physics;
@@ -187,7 +189,7 @@ LevelController::ChangeLevelTo( const std::string& path )
 	mPlayer->Spawn( mCurrentLevel->GetSpawn(), mMainCamera );
 
 	mSkybox = std::make_unique<SceneSkyBox>( mRenderer.GetResources().GetTextureInfo( "SKYBOX" ) );
-	mSkybox->Rotate( 135.f, { 0.f, 1.f, 0.f } );
+	mSkybox->Rotate( glm::radians( 100.f ), { 0.f, 1.f, 0.f } );
 	mPortals[PORTAL_1] = std::make_unique<Portal>( mRenderer.GetResources().GetTextureInfo( "resources/textures/blueportal.png" ), *mPhysics );
 	mPortals[PORTAL_2] = std::make_unique<Portal>( mRenderer.GetResources().GetTextureInfo( "resources/textures/orangeportal.png" ), *mPhysics );
 	mPortals[PORTAL_1]->SetPair( mPortals[PORTAL_2].get() );
@@ -214,6 +216,11 @@ LevelController::ChangeLevelTo( const std::string& path )
 		);
 	}
 	mRenderer.UseCameraMatrix( mMainCamera.get() );
+	mDyBox = std::make_unique<DynamicBox>( 
+		*mPhysics,
+		glm::vec3{ 0.f, 30.f, 0.f },
+		mRenderer.GetResources().GetTextureInfo( "resources/textures/box.jpg" )
+	);
 }
 
 void
@@ -230,14 +237,27 @@ LevelController::Update()
 
 	for( auto& portal : mPortals )
 	{
-		portal->Update();
+		portal->CheckPortalable( mPlayer.get() );
+		portal->CheckPortalable( mDyBox.get() );
 	}
+	mDyBox->Update();
 }
 
 void 
 LevelController::HandleKeys( std::unordered_map<unsigned int, bool>& key_map )
 {
 	mPlayer->HandleKeys( key_map );
+	if( key_map['e'] != mShootBoxToggle )
+	{
+		mShootBoxToggle = key_map['e'];
+		if( mShootBoxToggle )
+		{
+			auto pos = mPlayer->GetPosition();
+			auto dir = glm::normalize( mPlayer->GetLookDirection() );
+			mDyBox->SetPosition( pos + dir * 8.f );
+			mDyBox->Launch( std::move( dir ) * 5000.f );
+		}
+	}
 }
 
 void 
@@ -270,6 +290,7 @@ LevelController::RenderScene()
 	else
 	{
 		RenderBaseScene( mMainCamera.get()->GetViewMatrix(), mMainCamProjMat );
+		RenderDebugInfo();
 	}
 	RenderSkybox( mMainCamera.get()->GetViewMatrix(), mMainCamProjMat );
 }
@@ -408,10 +429,10 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 	// 绘制正常的场景
 	RenderSkybox( view_matrix, projection_matrix );
 	RenderBaseScene( view_matrix, projection_matrix );
-	if( current_recursion_level != 0 )
+	/*if( current_recursion_level != 0 )
 	{
 		RenderDebugInfo();
-	}
+	}*/
 }
 
 void 
@@ -433,6 +454,7 @@ LevelController::RenderBaseScene( glm::mat4 view_matrix, glm::mat4 projection_ma
 			mRenderer.RenderOneoff( portal->GetFrameRenderable() );
 		}
 	}
+	mRenderer.RenderOneoff( mDyBox.get() );
 }
 
 void

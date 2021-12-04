@@ -23,11 +23,12 @@ namespace portal
 		
 		void main()
 		{
-			gl_Position = projection_mat * view_mat * model_mat * vec4( in_pos, 1.0 );
+			mat4 model_view = view_mat * model_mat;
+			gl_Position = projection_mat * model_view * vec4( in_pos, 1.0 );
 			frag_pos = vec3( model_mat * vec4( in_pos, 1.0 ) );
 			tex_coord = in_uv;
 			color = in_color;
-			vec4 temp_normal = model_mat * vec4( in_normal, 1.0 );
+			vec4 temp_normal = transpose( inverse( model_mat ) ) * vec4( in_normal, 1.0 );
 			normal = temp_normal.xyz;
 		}
 	)~~~";
@@ -46,7 +47,7 @@ namespace portal
 		void main()
 		{
 			vec3 light_color = vec3( 1.0, 1.0, 1.0 );
-			vec3 light_pos = vec3( 1000.0, 1000.0, 1000.0 );
+			vec3 light_pos = vec3( 1000.0, 1000.0, -200.0 );
 
 			// Ambient
 			vec3 ambient = 0.15 * light_color;

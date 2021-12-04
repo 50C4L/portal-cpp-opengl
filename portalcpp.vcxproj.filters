@@ -50,6 +50,9 @@
     <ClCompile Include="Utility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DynamicBox.cpp">
+      <Filter>Source Files\gameplay</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h">
@@ -89,6 +92,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Portalable.h">
+      <Filter>Source Files\gameplay</Filter>
+    </ClInclude>
+    <ClInclude Include="DynamicBox.h">
       <Filter>Source Files\gameplay</Filter>
     </ClInclude>
   </ItemGroup>

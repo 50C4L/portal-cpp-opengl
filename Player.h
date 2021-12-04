@@ -79,6 +79,9 @@ namespace portal
 		///		水平角度
 		/// 
 		void Look( float yaw_angle, float pitch_angle );
+
+		glm::vec3 GetPosition();
+		glm::vec3 GetLookDirection();
 		
 	private:
 		physics::Physics& mPhysics;

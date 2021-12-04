@@ -8,7 +8,6 @@
 #include <glm/mat4x4.hpp>
 
 #include "Physics.h"
-#include "Player.h"
 
 namespace portal
 {
@@ -17,6 +16,8 @@ namespace portal
 	class Renderer;
 	class Camera;
 	class Portal;
+	class DynamicBox;
+	class Player;
 
 	///
 	/// 简单关卡控制器
@@ -103,6 +104,9 @@ namespace portal
 		std::unique_ptr<Portal> mPortals[2];
 		Level* mCurrentLevel;
 		glm::mat4 mMainCamProjMat;
+
+		std::unique_ptr<DynamicBox> mDyBox;
+		bool mShootBoxToggle = false;
 	};
 }
 

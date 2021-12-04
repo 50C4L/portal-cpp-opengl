@@ -60,6 +60,7 @@ Player::Spawn( glm::vec3 position, std::shared_ptr<Camera> camera )
 	mCollisionCapsule->SetDamping( PLAYER_AIR_DAMPING, 0.f );
 
 	mCollisionCapsule->GetCollisionObject()->setUserPointer( static_cast<void*>( this ) );
+	mPortalablePO = mCollisionCapsule.get();
 }
 
 void
@@ -138,6 +139,7 @@ Player::HandleKeys( std::unordered_map<unsigned int, bool>& key_map )
 void 
 Player::HandleMouse( std::unordered_map<int, bool>& button_map, Portal& portal_left, Portal& portal_right )
 {
+	// TODO Merge these
 	if( mMouseLeftPressed != button_map[ 1 ] )
 	{
 		mMouseLeftPressed = button_map[ 1 ];
@@ -152,7 +154,7 @@ Player::HandleMouse( std::unordered_map<int, bool>& button_map, Portal& portal_l
 				{
 					if( is_hit )
 					{
-						portal_left.PlaceAt( hit_point, hit_normal, mCollisionCapsule.get(), obj );
+						portal_left.PlaceAt( hit_point, hit_normal, obj );
 					}
 				}
 			);
@@ -173,7 +175,7 @@ Player::HandleMouse( std::unordered_map<int, bool>& button_map, Portal& portal_l
 				{
 					if( is_hit )
 					{
-						portal_right.PlaceAt( hit_point, hit_normal, mCollisionCapsule.get(), obj );
+						portal_right.PlaceAt( hit_point, hit_normal, obj );
 					}
 				}
 			);
@@ -190,10 +192,8 @@ Player::Look( float yaw_angle, float pitch_angle )
 void 
 Player::Teleport( Portal& in_portal )
 {
-	// 计算传送后的视图矩阵
-	glm::mat4 warpped_view = in_portal.ConvertView( mMainCamera->GetViewMatrix() );
-	// 从视图矩阵获取摄像机位置
-	glm::vec3 pos = utility::extract_view_postion_from_matrix( warpped_view );
+	// 计算传送后摄像机位置
+	glm::vec3 pos = in_portal.ConvertPointToOutPortal( mMainCamera->GetPosition() );
 	mMainCamera->SetPosition( pos );
 
 	// 计算传送后的摄像机焦点
@@ -212,4 +212,16 @@ Player::Teleport( Portal& in_portal )
 	velocity = in_portal.ConvertDirectionToOutPortal( std::move( velocity ), std::move( prev_pos ), std::move( pos ) );
 	velocity *= 1.f - mCollisionCapsule->GetLinearDamping();
 	mCollisionCapsule->SetLinearVelocity( std::move( velocity ) );
+}
+
+glm::vec3 
+Player::GetPosition()
+{
+	return mCollisionCapsule->GetPosition();
+}
+
+glm::vec3 
+Player::GetLookDirection()
+{
+	return mMainCamera->GetLookDirection();
 }

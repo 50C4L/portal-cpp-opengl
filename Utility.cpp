@@ -49,3 +49,52 @@ portal::utility::round_vector_to_zero( glm::vec3 vec, float threashold )
 		vec.z = 0.f;
 	return vec;
 }
+
+std::vector<portal::Vertex>
+portal::utility::generate_box_vertices( glm::vec3 position, float width, float height, float depth, float repeat )
+{
+	const glm::vec4 color{ 1.f, 1.f, 1.f, 1.f }; // White
+	return {
+		{ { position.x - width / 2.f, position.y + height / 2.f, position.z + depth / 2.f }, color, { 0.0f, repeat   }, { 0.f, 0.f, 1.f } },
+		{ { position.x + width / 2.f, position.y + height / 2.f, position.z + depth / 2.f }, color, { repeat, repeat }, { 0.f, 0.f, 1.f } },
+		{ { position.x + width / 2.f, position.y - height / 2.f, position.z + depth / 2.f }, color, { repeat, 0.0f   }, { 0.f, 0.f, 1.f } },
+		{ { position.x + width / 2.f, position.y - height / 2.f, position.z + depth / 2.f }, color, { repeat, 0.0f   }, { 0.f, 0.f, 1.f } },
+		{ { position.x - width / 2.f, position.y - height / 2.f, position.z + depth / 2.f }, color, { 0.0f, 0.0f     }, { 0.f, 0.f, 1.f } },
+		{ { position.x - width / 2.f, position.y + height / 2.f, position.z + depth / 2.f }, color, { 0.0f, repeat   }, { 0.f, 0.f, 1.f } },
+
+		{ { position.x - width / 2.f, position.y + height / 2.f, position.z + depth / 2.f }, color, { 0.0f, 0.0f     }, { 0.f, 1.f, 0.f } },
+		{ { position.x - width / 2.f, position.y + height / 2.f, position.z - depth / 2.f }, color, { 0.0f, repeat   }, { 0.f, 1.f, 0.f } },
+		{ { position.x + width / 2.f, position.y + height / 2.f, position.z - depth / 2.f }, color, { repeat, repeat }, { 0.f, 1.f, 0.f } },
+		{ { position.x + width / 2.f, position.y + height / 2.f, position.z - depth / 2.f }, color, { repeat, repeat }, { 0.f, 1.f, 0.f } },
+		{ { position.x + width / 2.f, position.y + height / 2.f, position.z + depth / 2.f }, color, { repeat, 0.0f   }, { 0.f, 1.f, 0.f } },
+		{ { position.x - width / 2.f, position.y + height / 2.f, position.z + depth / 2.f }, color, { 0.0f, 0.0f     }, { 0.f, 1.f, 0.f } },
+
+		{ { position.x - width / 2.f, position.y + height / 2.f, position.z + depth / 2.f }, color, { repeat, repeat }, { -1.f, 0.f, 0.f } },
+		{ { position.x - width / 2.f, position.y - height / 2.f, position.z + depth / 2.f }, color, { repeat, 0.0f   }, { -1.f, 0.f, 0.f } },
+		{ { position.x - width / 2.f, position.y - height / 2.f, position.z - depth / 2.f }, color, { 0.0f, 0.0f     }, { -1.f, 0.f, 0.f } },
+		{ { position.x - width / 2.f, position.y - height / 2.f, position.z - depth / 2.f }, color, { 0.0f, 0.0f     }, { -1.f, 0.f, 0.f } },
+		{ { position.x - width / 2.f, position.y + height / 2.f, position.z - depth / 2.f }, color, { 0.0f, repeat   }, { -1.f, 0.f, 0.f } },
+		{ { position.x - width / 2.f, position.y + height / 2.f, position.z + depth / 2.f }, color, { repeat, repeat }, { -1.f, 0.f, 0.f } },
+
+		{ { position.x + width / 2.f, position.y - height / 2.f, position.z + depth / 2.f }, color, { 0.0f, 0.0f     }, { 1.f, 0.f, 0.f } },
+		{ { position.x + width / 2.f, position.y + height / 2.f, position.z + depth / 2.f }, color, { 0.0f, repeat   }, { 1.f, 0.f, 0.f } },
+		{ { position.x + width / 2.f, position.y + height / 2.f, position.z - depth / 2.f }, color, { repeat, repeat }, { 1.f, 0.f, 0.f } },
+		{ { position.x + width / 2.f, position.y + height / 2.f, position.z - depth / 2.f }, color, { repeat, repeat }, { 1.f, 0.f, 0.f } },
+		{ { position.x + width / 2.f, position.y - height / 2.f, position.z - depth / 2.f }, color, { repeat, 0.0f   }, { 1.f, 0.f, 0.f } },
+		{ { position.x + width / 2.f, position.y - height / 2.f, position.z + depth / 2.f }, color, { 0.0f, 0.0f     }, { 1.f, 0.f, 0.f } },
+
+		{ { position.x - width / 2.f, position.y - height / 2.f, position.z - depth / 2.f }, color, { 0.0f, 0.0f     }, { 0.f, -1.f, 0.f } },
+		{ { position.x - width / 2.f, position.y - height / 2.f, position.z + depth / 2.f }, color, { 0.0f, repeat   }, { 0.f, -1.f, 0.f } },
+		{ { position.x + width / 2.f, position.y - height / 2.f, position.z + depth / 2.f }, color, { repeat, repeat }, { 0.f, -1.f, 0.f } },
+		{ { position.x + width / 2.f, position.y - height / 2.f, position.z + depth / 2.f }, color, { repeat, repeat }, { 0.f, -1.f, 0.f } },
+		{ { position.x + width / 2.f, position.y - height / 2.f, position.z - depth / 2.f }, color, { repeat, 0.0f   }, { 0.f, -1.f, 0.f } },
+		{ { position.x - width / 2.f, position.y - height / 2.f, position.z - depth / 2.f }, color, { 0.0f, 0.0f     }, { 0.f, -1.f, 0.f } },
+
+		{ { position.x + width / 2.f, position.y - height / 2.f, position.z - depth / 2.f }, color, { 0.0f, 0.0f     }, { 0.f, 0.f, -1.f } },
+		{ { position.x + width / 2.f, position.y + height / 2.f, position.z - depth / 2.f }, color, { 0.0f, repeat   }, { 0.f, 0.f, -1.f } },
+		{ { position.x - width / 2.f, position.y + height / 2.f, position.z - depth / 2.f }, color, { repeat, repeat }, { 0.f, 0.f, -1.f } },
+		{ { position.x - width / 2.f, position.y + height / 2.f, position.z - depth / 2.f }, color, { repeat, repeat }, { 0.f, 0.f, -1.f } },
+		{ { position.x - width / 2.f, position.y - height / 2.f, position.z - depth / 2.f }, color, { repeat, 0.0f   }, { 0.f, 0.f, -1.f } },
+		{ { position.x + width / 2.f, position.y - height / 2.f, position.z - depth / 2.f }, color, { 0.0f, 0.0f     }, { 0.f, 0.f, -1.f } },
+	};
+}

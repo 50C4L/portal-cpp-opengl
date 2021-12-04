@@ -149,6 +149,7 @@
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="DynamicBox.cpp" />
     <ClCompile Include="LevelController.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Physics.cpp" />
@@ -163,6 +164,7 @@
     <ClInclude Include="BuiltInShaders.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="DebugRenderer.h" />
+    <ClInclude Include="DynamicBox.h" />
     <ClInclude Include="LevelConstants.h" />
     <ClInclude Include="LevelController.h" />
     <ClInclude Include="Physics.h" />

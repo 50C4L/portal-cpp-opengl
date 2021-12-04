@@ -2,6 +2,8 @@
 #define _UTILITY_H
 
 #include <glm/mat4x4.hpp>
+#include <vector>
+#include "Renderer.h"
 
 namespace portal
 {
@@ -15,6 +17,8 @@ namespace portal
 		bool is_vector_has_nan_value( const glm::vec3& vec );
 
 		glm::vec3 round_vector_to_zero( glm::vec3 vec, float threashold = 0.00015f );
+
+		std::vector<Vertex> generate_box_vertices( glm::vec3 position, float width, float height, float depth, float repeat );
 	}
 }
 

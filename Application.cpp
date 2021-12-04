@@ -15,8 +15,8 @@ using namespace portal;
 namespace
 {
 	// 默认窗口大小
-	constexpr int DEFAULT_WIDTH = 1920;
-	constexpr int DEFAULT_HEIGHT = 1080;
+	constexpr int DEFAULT_WIDTH = 2560;
+	constexpr int DEFAULT_HEIGHT = 1440;
 	constexpr unsigned int UPDATE_TIME = 17; // 游戏逻辑每秒更新60次, 16.66666ms间隔
 }
 
@@ -126,6 +126,7 @@ Application::Application( Params params )
 	mKeyStatus.emplace( 's', false );
 	mKeyStatus.emplace( 'd', false );
 	mKeyStatus.emplace( ' ', false );
+	mKeyStatus.emplace( 'e', false );
 
 	mMouseButtonState.emplace( 1, false );
 	mMouseButtonState.emplace( 2, false );
@@ -173,6 +174,7 @@ Application::Initialize()
 	mRenderer->GetResources().LoadTexture( "resources/textures/white_wall.jpg" );
 	mRenderer->GetResources().LoadTexture( "resources/textures/blueportal.png" );
 	mRenderer->GetResources().LoadTexture( "resources/textures/orangeportal.png" );
+	mRenderer->GetResources().LoadTexture( "resources/textures/box.jpg" );
 	mRenderer->GetResources().LoadCubeMaps( {
 		"resources/textures/sky/right.jpg",
 		"resources/textures/sky/left.jpg",

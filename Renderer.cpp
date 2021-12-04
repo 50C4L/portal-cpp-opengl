@@ -226,6 +226,13 @@ Renderer::Renderable::Rotate( float angle, glm::vec3 axis )
 	mRotation = axis * angle;
 }
 
+void 
+Renderer::Renderable::SetTransform( glm::mat4 trans )
+{
+	mIsDirty = false;
+	mTransform = std::move( trans );
+}
+
 glm::mat4
 Renderer::Renderable::GetTransform()
 {

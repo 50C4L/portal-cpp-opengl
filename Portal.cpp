@@ -79,9 +79,7 @@ Portal::Portal( TextureInfo* texture, physics::Physics& physics )
 	, mHoleRenderable( generate_portal_ellipse_hole( PORTAL_GUT_WIDTH, PORTAL_GUT_HEIGHT ), Renderer::PORTAL_HOLE_SHADER, nullptr, Renderer::Renderable::DrawType::TRIANGLE_FANS )
 	, mHasBeenPlaced( false )
 	, mPairedPortal( nullptr )
-	, mPlayerPO( nullptr )
 	, mAttchedCO( nullptr )
-	, mIsPlayerDetected( false )
 	, mPhysics( physics )
 {
 	// 创建门框碰撞体
@@ -118,7 +116,7 @@ Portal::Portal( TextureInfo* texture, physics::Physics& physics )
 	// 创建两个触发区
 	const bool is_ghost = true;
 	mEntryTrigger = physics.CreateBox( 
-			mPosition +  mFaceDir *  3.f * PORTAL_ENTRY_TRIGGER_OFFSET,
+			mPosition +  mFaceDir * 3.f * PORTAL_ENTRY_TRIGGER_OFFSET,
 			{ 2 * PORTAL_GUT_WIDTH, 2 * PORTAL_GUT_HEIGHT, 8.f * PORTAL_ENTRY_TRIGGER_DEPTH }, 
 			Physics::PhysicsObject::Type::STATIC, 
 			static_cast<int>( PhysicsGroup::PORTAL_FRAME ),
@@ -145,23 +143,20 @@ Portal::SetPair( Portal* paired_portal )
 }
 
 bool 
-Portal::PlaceAt( glm::vec3 pos, glm::vec3 dir, Physics::PhysicsObject* player_po, const btCollisionObject* attched_surface_co )
+Portal::PlaceAt( glm::vec3 pos, glm::vec3 dir, const btCollisionObject* attched_surface_co )
 {
 	// 使用`is_vector_has_nan_value`来检测`pos`和`dir`是否含有NaN值，
 	// Bullet物理引擎在做射线检测时有时候结果会带有NaN值，就很烦 :(
-	if( !player_po || !attched_surface_co || is_vector_has_nan_value( pos ) || is_vector_has_nan_value( dir ) )
+	if( !attched_surface_co || is_vector_has_nan_value( pos ) || is_vector_has_nan_value( dir ) )
 	{
 		return false;
 	}
 
-	mPlayerPO = player_po;
 	mAttchedCO = attched_surface_co;
 	// Bullet物理引擎的射线检测碰撞法线有误差 大概是 < 0.00015
 	// 这里小于这个值的都当作0
 	dir = round_vector_to_zero( std::move( dir ) );
 	
-	std::cout << "Hit normal (" << dir.x << ", " << dir.y << ", " << dir.z << ")\n";
-	std::cout << "mOriginFaceDir (" << mOriginFaceDir.x << ", " << mOriginFaceDir.y << ", " << mOriginFaceDir.z << ")\n";
 	glm::vec3 rot_axis = mUpDir;
 	if( mOriginFaceDir != dir && mOriginFaceDir != dir * -1.f )
 	{
@@ -187,9 +182,6 @@ Portal::PlaceAt( glm::vec3 pos, glm::vec3 dir, Physics::PhysicsObject* player_po
 
 	mPosition = pos;
 	mFaceDir = dir;
-
-	std::cout << "mUpDir (" << mUpDir.x << ", " << mUpDir.y << ", " << mUpDir.z << ")\n";
-	std::cout << "mRightDir (" << mRightDir.x << ", " << mRightDir.y << ", " << mRightDir.z << ")\n";
 
 	// 根据上面求得的位置和旋转变量来更新门口和门面的模型矩阵
 	// 求它们之间的夹角
@@ -231,7 +223,7 @@ Portal::PlaceAt( glm::vec3 pos, glm::vec3 dir, Physics::PhysicsObject* player_po
 	// 门口触发区
 	{
 		glm::mat4 trans( 1.f );
-		trans = glm::translate( trans, pos + mFaceDir * PORTAL_ENTRY_TRIGGER_OFFSET );
+		trans = glm::translate( trans, pos + mFaceDir * 3.f *  PORTAL_ENTRY_TRIGGER_OFFSET );
 		trans = glm::rotate( trans, theta, rot_axis );
 		mEntryTrigger->SetTransform( std::move( trans ) );
 	}
@@ -287,38 +279,45 @@ Portal::GetPosition()
 }
 
 void 
-Portal::Update()
+Portal::CheckPortalable( Portalable* portalable )
 {
-	if( mHasBeenPlaced && mPairedPortal && mPairedPortal->HasBeenPlaced() && mPlayerPO )
+	if( mHasBeenPlaced && mPairedPortal && mPairedPortal->HasBeenPlaced() && portalable && portalable->GetPhysicsObject() )
 	{
-		mIsPlayerDetected = mEntryTrigger->GetAABB().IsContain( mPlayerPO->GetPosition() );
+		auto physics_object = portalable->GetPhysicsObject();
+		const bool is_detected = IsPortalableEntering( portalable );
 		if( mAttchedCO )
 		{
-			// 当玩家在传送门判定区内，关闭玩家与传送门附着面的碰撞检测，使得玩家可以“穿过”传送门
-			// 当两个门在同一面墙时，玩家进入任意一个门的警戒区都会关闭与墙壁的碰撞
-			if( mAttchedCO == mPairedPortal->GetAttachedCollisionObject() && 
-				mIsPlayerDetected != mPairedPortal->IsPlayerDetected() )
+			// 当物体在传送门判定区内，关闭物体与传送门附着面的碰撞检测，使得物体可以“穿过”传送门
+			// 当两个门在同一面墙时，物体进入任意一个门的警戒区都会关闭与墙壁的碰撞
+			if( mAttchedCO == mPairedPortal->GetAttachedCollisionObject() &&
+				is_detected != mPairedPortal->IsPortalableEntering( portalable ) )
 			{
-				mPlayerPO->SetIgnoireCollisionWith( mAttchedCO, true );
+				physics_object->SetIgnoireCollisionWith( mAttchedCO, true );
 			}
 			else
 			{
-				mPlayerPO->SetIgnoireCollisionWith( mAttchedCO, mIsPlayerDetected );
+				physics_object->SetIgnoireCollisionWith( mAttchedCO, is_detected );
 			}
 		}
-		if( mIsPlayerDetected )
+		if( is_detected )
 		{
 			auto aabb = mTeleportTrigger->GetAABB();
-			if( aabb.IsContain( mPlayerPO->GetPosition() ) )
+			if( aabb.IsContain( physics_object->GetPosition() ) )
 			{
-				if( auto player_ptr = static_cast<Portalable*>( mPlayerPO->GetCollisionObject()->getUserPointer() ) )
-				{
-					glm::vec3 new_pos = mPairedPortal->GetPosition();
-					player_ptr->Teleport( *this );
-				}
+				portalable->Teleport( *this );
 			}
 		}
 	}
+}
+
+bool 
+Portal::IsPortalableEntering( Portalable* portalable )
+{
+	if( !portalable || !portalable->GetPhysicsObject() )
+	{
+		return false;
+	}
+	return mEntryTrigger->GetAABB().IsContain( portalable->GetPhysicsObject()->GetPosition() );
 }
 
 glm::vec3 
@@ -337,12 +336,6 @@ const btCollisionObject*
 Portal::GetAttachedCollisionObject()
 {
 	return mAttchedCO;
-}
-
-bool 
-Portal::IsPlayerDetected()
-{
-	return mIsPlayerDetected;
 }
 
 glm::mat4 
