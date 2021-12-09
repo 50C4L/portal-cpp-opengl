@@ -123,6 +123,19 @@ Physics::PhysicsObject::GetLinearVelocity()
 }
 
 void 
+Physics::PhysicsObject::SetAngularVelocity( glm::vec3 velocity )
+{
+	mBody->setAngularVelocity( { velocity.x, velocity.y, velocity.z } );
+}
+
+glm::vec3 
+Physics::PhysicsObject::GetAngularVelocity()
+{
+	auto veclocity = mBody->getAngularVelocity();
+	return { veclocity.x(), veclocity.y(), veclocity.z() };
+}
+
+void 
 Physics::PhysicsObject::SetAngularFactor( glm::vec3 factors )
 {
 	mBody->setAngularFactor( { factors.z, factors.y, factors.z } );

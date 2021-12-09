@@ -107,6 +107,7 @@ namespace portal
 
 		std::unique_ptr<DynamicBox> mDyBox;
 		bool mShootBoxToggle = false;
+		bool mRenderClone = false;
 	};
 }
 

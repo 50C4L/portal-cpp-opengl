@@ -25,7 +25,7 @@ namespace
 {
 	constexpr int PORTAL_1 = 0;
 	constexpr int PORTAL_2 = 1;
-	const int MAX_PORTAL_RECURSION = 1;
+	const int MAX_PORTAL_RECURSION = 5;
 }
 
 ///
@@ -239,7 +239,18 @@ LevelController::Update()
 	{
 		portal->CheckPortalable( mPlayer.get() );
 		portal->CheckPortalable( mDyBox.get() );
+		if( portal->IsPortalableEntering( mDyBox.get() ) )
+		{
+			// Clone!
+			mDyBox->CloneAt( *portal );
+			mRenderClone = true;
+		}
 	}
+	if( !mPortals[PORTAL_1]->IsPortalableEntering( mDyBox.get() ) && !mPortals[PORTAL_2]->IsPortalableEntering( mDyBox.get() ) )
+	{
+		mRenderClone = false;
+	}
+
 	mDyBox->Update();
 }
 
@@ -292,7 +303,6 @@ LevelController::RenderScene()
 		RenderBaseScene( mMainCamera.get()->GetViewMatrix(), mMainCamProjMat );
 		RenderDebugInfo();
 	}
-	RenderSkybox( mMainCamera.get()->GetViewMatrix(), mMainCamProjMat );
 }
 
 void
@@ -342,7 +352,7 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 			glm::perspective( 
 				glm::radians( 90.f ),
 				16.f / 9.f,
-				distance_to_portal,
+				distance_to_portal - 0.1f,
 				1000.f
 			);
 
@@ -427,7 +437,6 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 	glDepthMask( GL_TRUE );
 	glEnable(GL_DEPTH_TEST);
 	// 绘制正常的场景
-	RenderSkybox( view_matrix, projection_matrix );
 	RenderBaseScene( view_matrix, projection_matrix );
 	/*if( current_recursion_level != 0 )
 	{
@@ -438,6 +447,7 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 void 
 LevelController::RenderBaseScene( glm::mat4 view_matrix, glm::mat4 projection_matrix )
 {
+	RenderSkybox( view_matrix, projection_matrix );
 	mRenderer.SetProjectionMatrix( std::move( projection_matrix ) );
 	mRenderer.SetViewMatrix( std::move( view_matrix ) );
 	// 绘制除了“真传送门”以外的场景
@@ -455,6 +465,10 @@ LevelController::RenderBaseScene( glm::mat4 view_matrix, glm::mat4 projection_ma
 		}
 	}
 	mRenderer.RenderOneoff( mDyBox.get() );
+	if( mRenderClone )
+	{
+		mRenderer.RenderOneoff( mDyBox->GetClone() );
+	}
 }
 
 void

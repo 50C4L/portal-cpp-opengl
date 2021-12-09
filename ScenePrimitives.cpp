@@ -4,6 +4,8 @@
 
 using namespace portal;
 
+const float SKYBOX_SIZE = 500.f;
+
 SceneBox::SceneBox( glm::vec3 position, float width, float height, float depth, std::string shader_name, TextureInfo* texture )
 	: Renderer::Renderable( utility::generate_box_vertices( position, width, height, depth, 4.f ), std::move( shader_name ), texture )
 {
@@ -13,47 +15,47 @@ SceneSkyBox::SceneSkyBox( TextureInfo* cube_map_tex )
 	: Renderer::Renderable(
 		{
 			// Top
-			{{ -500.0f,  500.0f, -500.0f }, {}, {}, {} },
-			{{  500.0f,  500.0f, -500.0f }, {}, {}, {} },
-			{{  500.0f,  500.0f,  500.0f }, {}, {}, {} },
-			{{  500.0f,  500.0f,  500.0f }, {}, {}, {} },
-			{{ -500.0f,  500.0f,  500.0f }, {}, {}, {} },
-			{{ -500.0f,  500.0f, -500.0f }, {}, {}, {} },
+			{{ -SKYBOX_SIZE,  SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
+			{{  SKYBOX_SIZE,  SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
+			{{  SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
+			{{  SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
+			{{ -SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
+			{{ -SKYBOX_SIZE,  SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
 			// Bottom
-			{{ -500.0f, -500.0f, -500.0f }, {}, {}, {} },
-			{{ -500.0f, -500.0f,  500.0f }, {}, {}, {} },
-			{{  500.0f, -500.0f, -500.0f }, {}, {}, {} },
-			{{  500.0f, -500.0f, -500.0f }, {}, {}, {} },
-			{{ -500.0f, -500.0f,  500.0f }, {}, {}, {} },
-			{{  500.0f, -500.0f,  500.0f }, {}, {}, {} },
+			{{ -SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
+			{{ -SKYBOX_SIZE, -SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
+			{{  SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
+			{{  SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
+			{{ -SKYBOX_SIZE, -SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
+			{{  SKYBOX_SIZE, -SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
 			// Left
-			{{ -500.0f, -500.0f,  500.0f }, {}, {}, {} },
-			{{ -500.0f, -500.0f, -500.0f }, {}, {}, {} },
-			{{ -500.0f,  500.0f, -500.0f }, {}, {}, {} },
-			{{ -500.0f,  500.0f, -500.0f }, {}, {}, {} },
-			{{ -500.0f,  500.0f,  500.0f }, {}, {}, {} },
-			{{ -500.0f, -500.0f,  500.0f }, {}, {}, {} },
+			{{ -SKYBOX_SIZE, -SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
+			{{ -SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
+			{{ -SKYBOX_SIZE,  SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
+			{{ -SKYBOX_SIZE,  SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
+			{{ -SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
+			{{ -SKYBOX_SIZE, -SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
 			// Right
-			{{ 500.0f, -500.0f, -500.0f }, {}, {}, {} },
-			{{ 500.0f, -500.0f,  500.0f }, {}, {}, {} },
-			{{ 500.0f,  500.0f,  500.0f }, {}, {}, {} },
-			{{ 500.0f,  500.0f,  500.0f }, {}, {}, {} },
-			{{ 500.0f,  500.0f, -500.0f }, {}, {}, {} },
-			{{ 500.0f, -500.0f, -500.0f }, {}, {}, {} },
+			{{ SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
+			{{ SKYBOX_SIZE, -SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
+			{{ SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
+			{{ SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
+			{{ SKYBOX_SIZE,  SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
+			{{ SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
 			// front
-			{{ -500.0f, -500.0f,  500.0f }, {}, {}, {} },
-			{{ -500.0f,  500.0f,  500.0f }, {}, {}, {} },
-			{{  500.0f,  500.0f,  500.0f }, {}, {}, {} },
-			{{  500.0f,  500.0f,  500.0f }, {}, {}, {} },
-			{{  500.0f, -500.0f,  500.0f }, {}, {}, {} },
-			{{ -500.0f, -500.0f,  500.0f }, {}, {}, {} },
+			{{ -SKYBOX_SIZE, -SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
+			{{ -SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
+			{{  SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
+			{{  SKYBOX_SIZE,  SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
+			{{  SKYBOX_SIZE, -SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
+			{{ -SKYBOX_SIZE, -SKYBOX_SIZE,  SKYBOX_SIZE }, {}, {}, {} },
 			// back
-			{{ -500.0f,  500.0f, -500.0f }, {}, {}, {} },
-			{{ -500.0f, -500.0f, -500.0f }, {}, {}, {} },
-			{{  500.0f, -500.0f, -500.0f }, {}, {}, {} },
-			{{  500.0f, -500.0f, -500.0f }, {}, {}, {} },
-			{{  500.0f,  500.0f, -500.0f }, {}, {}, {} },
-			{{ -500.0f,  500.0f, -500.0f }, {}, {}, {} },
+			{{ -SKYBOX_SIZE,  SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
+			{{ -SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
+			{{  SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
+			{{  SKYBOX_SIZE, -SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
+			{{  SKYBOX_SIZE,  SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
+			{{ -SKYBOX_SIZE,  SKYBOX_SIZE, -SKYBOX_SIZE }, {}, {}, {} },
 		}, Renderer::DEFAULT_SKYBOX_SHADER, cube_map_tex
 	)
 {}

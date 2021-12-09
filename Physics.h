@@ -93,6 +93,9 @@ namespace portal
 				void SetLinearVelocity( glm::vec3 velocity );
 				glm::vec3 GetLinearVelocity();
 
+				void SetAngularVelocity( glm::vec3 velocity );
+				glm::vec3 GetAngularVelocity();
+
 				///
 				/// 设置角速度因素
 				/// 

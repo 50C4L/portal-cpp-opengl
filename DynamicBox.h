@@ -19,10 +19,13 @@ namespace portal
 
 		void SetPosition( glm::vec3 pos );
 		void Launch( glm::vec3 force );
+		void CloneAt( Portal& in_portal );
+		Renderer::Renderable* GetClone();
 
 	private:
 		std::unique_ptr<physics::Physics::Box> mCollisionBox;
 		physics::Physics& mPhysics;
+		Renderer::Renderable mClone;
 	};
 }
 
