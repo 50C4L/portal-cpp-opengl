@@ -9,7 +9,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include <stb_image.h>
 
 #include "Camera.h"
 #include "BuiltInShaders.h"
