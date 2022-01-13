@@ -3,6 +3,7 @@
 
 #include <glm/mat4x4.hpp>
 #include <vector>
+#include <string>
 #include "Renderer.h"
 
 namespace portal
