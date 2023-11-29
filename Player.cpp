@@ -19,7 +19,7 @@ namespace
 	const float PLAYER_CAPSULE_HEIGHT = 5.f;
 	const float PLAYER_GROUND_DAMPING = 0.9f;
 	const float PLAYER_AIR_DAMPING = 0.1f;
-	const float PLAYER_MAX_VELOCITY = 20.f;
+	const float PLAYER_MAX_VELOCITY = 10.f;
 	const float PLAYER_JUMP_FORCE = 700.f;
 	const float PLAYER_CAMERA_OFFSET = 4.f;
 

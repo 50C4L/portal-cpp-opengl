@@ -352,7 +352,7 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 			glm::perspective( 
 				glm::radians( 90.f ),
 				16.f / 9.f,
-				distance_to_portal - 0.1f,
+				distance_to_portal - 1.1f,
 				1000.f
 			);
 
@@ -438,10 +438,10 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 	glEnable(GL_DEPTH_TEST);
 	// 绘制正常的场景
 	RenderBaseScene( view_matrix, projection_matrix );
-	/*if( current_recursion_level != 0 )
+	if( current_recursion_level != 0 )
 	{
 		RenderDebugInfo();
-	}*/
+	}
 }
 
 void 

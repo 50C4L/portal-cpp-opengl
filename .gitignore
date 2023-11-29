@@ -1,3 +1,4 @@
 ﻿.vs
 x64/Debug
-thirdparty
+*.import
+x64
