@@ -20,9 +20,9 @@ namespace portal
 	class Player;
 
 	///
-	/// 简单关卡控制器
-	/// 加载关卡和Gameplay逻辑都在里面
-	/// TODO: Gameplay逻辑应该独立出来
+	/// Simple level controller
+	/// Level loading and gameplay logic both live in here
+	/// TODO: Gameplay logic should be split out
 	/// 
 	class LevelController
 	{
@@ -31,7 +31,7 @@ namespace portal
 		{
 		public:
 			///
-			/// 关卡组成只有墙，所以就写这里了
+			/// Levels are just walls, so this lives here
 			/// 
 			struct Wall
 			{
@@ -49,18 +49,18 @@ namespace portal
 			Level();
 			~Level() = default;
 
-			/// 关卡不能被Copy
+			/// Levels can't be copied
 			Level( const Level& ) = delete;
 			Level operator=( const Level& ) = delete;
 
 			///
-			/// 加墙，读取关卡文件时使用
+			/// Add a wall, used while reading the level file
 			/// 
 			void AddWall( Wall&& wall );
 			std::vector<Wall>& GetWalls();
 
 			///
-			/// 设置玩家出生点，读取关卡文件时使用
+			/// Set the player spawn point, used while reading the level file
 			/// 
 			void SetSpawn( glm::vec3 point );
 			glm::vec3 GetSpawn() const;

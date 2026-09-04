@@ -31,7 +31,7 @@ namespace portal
 		};
 
 		///
-		/// 物体碰撞回调
+		/// Object collision callback
 		/// 
 		class Callback
 		{
@@ -40,10 +40,10 @@ namespace portal
 				: mCallback( nullptr )
 			{}
 			///
-			/// 构造函数
+			/// Constructor
 			/// 
 			/// @param callback
-			///		碰撞发生时调用
+			///		Called when a collision happens
 			/// 
 			Callback( std::function<void(bool)> callback );
 			~Callback();
@@ -55,40 +55,40 @@ namespace portal
 		class DebugRenderer;
 
 		///
-		/// 物理主类
-		/// 封装reactphysics3d功能，请确保每个关卡只有一个实例
+		/// Main physics class
+		/// Wraps reactphysics3d; please make sure each level has only one instance
 		/// 
 		class Physics
 		{
 		public:
 			///
-			/// 物理物体基础
+			/// Physics object base
 			/// 
 			class PhysicsObject
 			{
 			public:
 				///
-				/// 刚体类型
-				/// is_rigid 为 false时这个设置不起作用
+				/// Rigid body type
+				/// This setting does nothing when is_rigid is false
 				/// 
 				enum class Type
 				{
-					STATIC,    //< 静态物体，静态物体之间不会碰撞，不会收到任何力的影响
-					KINEMATIC, //< 永动物体，不会被阻挡不会收到任何力的影响
-					DYNAMIC    //< 动态物体，与所有物体发生碰撞，受力影响
+					STATIC,    //< Static body, statics don't collide with each other and aren't affected by any forces
+					KINEMATIC, //< Perpetual-motion body, won't be stopped, won't be affected by any forces
+					DYNAMIC    //< Dynamic body, collides with everything, affected by forces
 				};
 
 				///
-				/// 位置的getter和setter
+				/// Position getter and setter
 				/// 
 				glm::vec3 GetPosition() const;
 				void SetPosition( glm::vec3 pos );
 
 				///
-				/// 设置线速度
+				/// Set linear velocity
 				/// 
 				/// @param velocity
-				///		速度
+				///		Velocity
 				/// 
 				void SetLinearVelocity( glm::vec3 velocity );
 				glm::vec3 GetLinearVelocity();
@@ -97,39 +97,39 @@ namespace portal
 				glm::vec3 GetAngularVelocity();
 
 				///
-				/// 设置角速度因素
+				/// Set angular factor
 				/// 
 				/// @param factors [0.0 - 1.0]
-				///		x, y, z代表三个轴上的角速度因素，0表示不能转动，1表示1:1转动
+				///		x, y, z are the angular factors on the three axes; 0 means can't rotate, 1 means 1:1 rotation
 				///
 				void SetAngularFactor( glm::vec3 factors );
 
 				///
-				/// 设置阻力
+				/// Set damping
 				/// 
 				/// @param linear
-				///		线速度阻力
+				///		Linear damping
 				/// 
 				/// @param angular
-				///		角速度阻力
+				///		Angular damping
 				/// 
 				void SetDamping( float linear, float angular );
 				float GetLinearDamping();
 
 				///
-				/// 施加冲击力
+				/// Apply an impulse
 				/// 
 				/// @param force
-				///		力的量和方向
+				///		Magnitude and direction of the force
 				/// 
 				/// @param pos
-				///		力的作用点
+				///		Point the force is applied at
 				/// 
 				void SetImpluse( glm::vec3 force, glm::vec3 pos );
 
 				///
-				/// 唤醒物体
-				/// 物体在完全静止时会进入睡眠，减少计算
+				/// Wake the body up
+				/// Bodies go to sleep when fully at rest, to cut down on computation
 				/// 
 				void Activate();
 
@@ -146,18 +146,18 @@ namespace portal
 
 			protected:
 				///
-				/// 构造函数
+				/// Constructor
 				/// 
 				/// @param pos
-				///		位置
+				///		Position
 				/// 
 				/// @param world
 				///		Reference to btDiscreteDynamicsWorld
 				/// 
 				/// @param type
-				///		刚体类型
+				///		Rigid body type
 				/// @param callback
-				///		本物体发生碰撞时调用的回调函数，必须确保Update()有定期被调用
+				///		Callback fired when this body collides; make sure Update() is being called regularly
 				/// 
 				PhysicsObject( glm::vec3 pos,
 							   btDiscreteDynamicsWorld& world,
@@ -167,22 +167,22 @@ namespace portal
 				~PhysicsObject();
 
 				///
-				/// 创建刚体
+				/// Create the rigid body
 				/// 
 				/// @param pos
-				///		中心位置
+				///		Center position
 				/// 
 				/// @param collision_shape
-				///		btCollisionShape指针
+				///		btCollisionShape pointer
 				/// 
 				/// @param group
-				///		物体的分组
+				///		Collision group
 				/// 
 				/// @param mask
-				///		物体的掩码，用于过滤碰撞
+				///		Collision mask, used to filter collisions
 				///
 				/// @param is_ghost
-				///		是否只检测碰撞，不作物理反馈
+				///		Whether to only detect collisions, with no physics response
 				/// 
 				void BuildRigidBody( glm::vec3 pos, btCollisionShape* collision_shape, int group, int mask, bool is_ghost );
 
@@ -194,35 +194,35 @@ namespace portal
 			};
 
 			///
-			/// 盒子型碰撞体
-			/// 使用Physics::CreateBox来创建实例
+			/// Box collider
+			/// Use Physics::CreateBox to create an instance
 			/// 
 			class Box : public PhysicsObject
 			{
 			public:
 				///
-				/// 构造函数
+				/// Constructor
 				/// 
 				/// @param pos
-				///		中心位置
+				///		Center position
 				/// 
 				/// @param size
-				///		长宽高
+				///		Width, height, depth
 				/// 
 				/// @param world
 				///		Reference to btDiscreteDynamicsWorld
 				/// 
 				/// @param type
-				///		刚体类型
+				///		Rigid body type
 				///
 				/// @param group
-				///		物体的分组
+				///		Collision group
 				/// 
 				/// @param mask
-				///		物体的掩码，用于过滤碰撞
+				///		Collision mask, used to filter collisions
 				/// 
 				/// @param callback
-				///		本物体发生碰撞时调用的回调函数，必须确保Update()有定期被调用
+				///		Callback fired when this body collides; make sure Update() is being called regularly
 				///  
 				Box( glm::vec3 pos, 
 					 glm::vec3 size, 
@@ -236,38 +236,38 @@ namespace portal
 			};
 
 			///
-			/// 胶囊型碰撞体
-			/// 使用Physics::CreateCapsule来创建实例
+			/// Capsule collider
+			/// Use Physics::CreateCapsule to create an instance
 			/// 
 			class Capsule : public PhysicsObject
 			{
 			public:
 				///
-				/// 构造函数
+				/// Constructor
 				/// 
 				/// @param pos
-				///		中心位置
+				///		Center position
 				/// 
 				/// @param raidus
-				///		胶囊两头球形的半径
+				///		Radius of the spheres at both ends of the capsule
 				/// 
 				/// @param height
-				///		胶囊身体的长度
+				///		Length of the capsule body
 				/// 
 				/// @param world
 				///		Reference to btDiscreteDynamicsWorld
 				/// 
 				/// @param type
-				///		刚体类型
+				///		Rigid body type
 				///
 				/// @param group
-				///		物体的分组
+				///		Collision group
 				/// 
 				/// @param mask
-				///		物体的掩码，用于过滤碰撞
+				///		Collision mask, used to filter collisions
 				/// 
 				/// @param callback
-				///		本物体发生碰撞时调用的回调函数，必须确保Update()有定期被调用
+				///		Callback fired when this body collides; make sure Update() is being called regularly
 				///  
 				Capsule( glm::vec3 pos, 
 						 float raidus, 
@@ -283,31 +283,31 @@ namespace portal
 
 		public:
 			///
-			/// 构造函数
+			/// Constructor
 			/// 
 			Physics( Renderer& renderer );
 			~Physics();
 
 			///
-			/// 初始化，请只调用一次
+			/// Initialize, please only call this once
 			/// 
 			/// @param dt
-			///		物理更新的固定间隔 单位：秒
+			///		Fixed physics timestep, in seconds
 			/// 
 			void Initialize( float dt );
 
 			///
-			/// 更新物理信息，调用频率越高结果越准确
+			/// Update physics; the more often you call this, the more accurate the result
 			/// 
 			/// @param enable_debug_draw
-			///		是否渲染物理debug数据
+			///		Whether to render physics debug data
 			/// 
 			void Update();
 
 			///
-			/// 创建盒子
+			/// Create a box
 			/// 
-			/// 参数请见Box构造函数
+			/// See the Box constructor for parameters
 			/// 
 			std::unique_ptr<Box> CreateBox( 
 				glm::vec3 pos, 
@@ -319,9 +319,9 @@ namespace portal
 				physics::Callback callback = {} );
 			 
 			///
-			/// 创建胶囊
+			/// Create a capsule
 			/// 
-			/// 参数请见Capsule构造函数
+			/// See the Capsule constructor for parameters
 			/// 
 			std::unique_ptr<Capsule> CreateCapsule( 
 				glm::vec3 pos, 
@@ -334,24 +334,24 @@ namespace portal
 				physics::Callback callback = {} );
 
 			///
-			/// 发射射线
+			/// Cast a ray
 			/// 
 			void CastRay( glm::vec3 from, glm::vec3 to, int filter_group, std::function<void(bool, glm::vec3, glm::vec3, const btCollisionObject* )> callback = nullptr );
 
 			///
-			/// 渲染物理Debug信息
+			/// Render physics debug info
 			/// 
 			void DebugRender();
 
 		private:
-			// Bullet3 物理所需组件
+			// Bits Bullet3 physics needs
 			std::unique_ptr<btDefaultCollisionConfiguration> mConfiguration;
 			std::unique_ptr<btCollisionDispatcher> mCollisionDispatcher;
 			std::unique_ptr<btBroadphaseInterface> mBroadphaseInterface;
 			std::unique_ptr<btSequentialImpulseConstraintSolver> mSequentialImpulseConstraintSolver;
 			std::unique_ptr<btDiscreteDynamicsWorld> mWorld;
 
-			std::chrono::steady_clock::time_point mPreviousUpdateTimepoint; //< 上一次Update被调用的时间点
+			std::chrono::steady_clock::time_point mPreviousUpdateTimepoint; //< The last time Update was called
 
 			std::unique_ptr<DebugRenderer> mDebugRenderer;
 			Renderer& mRenderer;

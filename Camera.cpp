@@ -71,16 +71,16 @@ Camera::UpdateCamera( float pitch, float yaw, glm::vec3 translate )
 {
 	mPosition += translate;
 	mTarget += translate;
-	// 从当前的视图矩阵获取右向量
+	// Grab the right vector from the current view matrix
 	glm::mat4 camera = glm::inverse( mViewMat );
 	mCameraRightDirection = glm::vec3( camera[0] );
-	// 绕右向量转动
+	// Rotate around the right vector
 	mTarget = mPosition + glm::vec3( glm::rotate( glm::mat4{ 1.f }, glm::radians( pitch ), mCameraRightDirection ) * glm::vec4( mTarget - mPosition, 1.f ) );
-	// 绕上向量转动
+	// Rotate around the up vector
 	mTarget = mPosition + glm::vec3( glm::rotate( glm::mat4{ 1.f }, glm::radians( yaw ), mCameraUpDirection ) * glm::vec4( mTarget - mPosition, 1.f ) );
 	UpdateViewMatrix();
 
-	// 更新前进方向，FPS摄像机只能水平移动
+	// Update the forward direction; FPS camera can only move horizontally
 	const glm::vec3 look_dir = GetLookDirection();
 	mCameraFrontDirection.x = look_dir.x;
 	mCameraFrontDirection.z = look_dir.z;

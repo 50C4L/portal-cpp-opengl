@@ -57,7 +57,7 @@ Renderer::Shader::Shader()
 Renderer::Shader::Shader( const std::string& vertex_shader, const std::string& fragment_shader )
 {
 	mIsValid = true;
-	// Lambda函数用于检查shader是否有编译错误
+	// Lambda to check whether a shader failed to compile
 	auto check_compile_error = []( unsigned int id ) -> bool
 	{
 		int success;
@@ -73,7 +73,7 @@ Renderer::Shader::Shader( const std::string& vertex_shader, const std::string& f
 		return static_cast<bool>( success );
 	};
 
-	// 编译顶点shader
+	// Compile the vertex shader
 	unsigned int vs_id = glCreateShader( GL_VERTEX_SHADER );
 	const char* vs_src = vertex_shader.c_str();
 	glShaderSource( vs_id, 1, &vs_src, NULL );
@@ -81,14 +81,14 @@ Renderer::Shader::Shader( const std::string& vertex_shader, const std::string& f
 	mIsValid = check_compile_error( vs_id );
 
 
-	// 编译片源shader
+	// Compile the fragment shader
 	unsigned int fs_id = glCreateShader( GL_FRAGMENT_SHADER );
 	const char* fs_src = fragment_shader.c_str();
 	glShaderSource( fs_id, 1, &fs_src, NULL );
 	glCompileShader( fs_id );
 	mIsValid = check_compile_error( fs_id );
 
-	// 连接两个shader生成shader program
+	// Link the two shaders into a shader program
 	mId = glCreateProgram();
 	glAttachShader( mId, vs_id );
 	glAttachShader( mId, fs_id );
@@ -105,12 +105,12 @@ Renderer::Shader::Shader( const std::string& vertex_shader, const std::string& f
 		mIsValid = false;
 	}
 
-	// 获取矩阵变量在Shader中的位置
+	// Grab the matrix uniform locations in the shader
 	mModelMatUniformLocation = glGetUniformLocation( mId, MODEL_MATRIX_UNIFORM_NAME.c_str() );
 	mViewMatUniformLocation = glGetUniformLocation( mId, VIEW_MATRIX_UNIFORM_NAME.c_str() );
 	mProjectionMatUniformLocation = glGetUniformLocation( mId, PROJECTION_MATRIX_UNIFORM_NAME.c_str() );
 
-	// 编译结束，可以释放顶点和片源的资源
+	// Compile's done, we can free the vertex and fragment shader objects
 	glDeleteShader( vs_id );
 	glDeleteShader( fs_id );
 }
@@ -178,18 +178,18 @@ Renderer::Renderable::Renderable( std::vector<Vertex>&& vertices, std::string sh
 
 	glBindVertexArray( mVAO );
 	glBindBuffer( GL_ARRAY_BUFFER, mVBO );
-	// 申请显存空间来放顶点数据
+	// Allocate GPU memory for the vertex data
 	glBufferData( GL_ARRAY_BUFFER, mNumberOfVertices * sizeof( Vertex ), &vertices.front(), GL_STATIC_DRAW );
-	// 绑定顶点位置数据到 POSITION_INDEX
+	// Bind vertex positions to POSITION_INDEX
 	glVertexAttribPointer( POSITION_INDEX, 3, GL_FLOAT, GL_FALSE, sizeof( Vertex ), (void*)0 );
 	glEnableVertexAttribArray( POSITION_INDEX );
-	// 绑定顶点颜色数据到 COLOR_INDEX
+	// Bind vertex colors to COLOR_INDEX
 	glVertexAttribPointer( COLOR_INDEX, 4, GL_FLOAT, GL_FALSE, sizeof( Vertex ), (void*)( sizeof( glm::vec3 ) ) );
 	glEnableVertexAttribArray( COLOR_INDEX );
-	// 绑定顶点UV数据到 UV_INDEX
+	// Bind vertex UVs to UV_INDEX
 	glVertexAttribPointer( UV_INDEX, 2, GL_FLOAT, GL_FALSE, sizeof( Vertex ), (void*)( sizeof( glm::vec3 ) + sizeof( glm::vec4 ) ) );
 	glEnableVertexAttribArray( UV_INDEX );
-	// 绑定顶点法线数据到 NORMAL_INDEX
+	// Bind vertex normals to NORMAL_INDEX
 	glVertexAttribPointer( NORMAL_INDEX, 3, GL_FLOAT, GL_FALSE, sizeof( Vertex ), (void*)( sizeof( glm::vec3 ) + sizeof( glm::vec4 ) + sizeof( glm::vec2 ) ) );
 	glEnableVertexAttribArray( NORMAL_INDEX );
 }
@@ -356,7 +356,7 @@ Renderer::Resources::GetTextureInfo( const std::string& path )
 	}
 	else
 	{
-		// TODO: 返回一个紫色之类的默认贴图
+		// TODO: Return some default texture, like a purple one
 		static TextureInfo default_tex{ 0, GL_TEXTURE_2D };
 		std::cerr << "ERROR: Cannot find the required texture " << path << std::endl;
 		return &default_tex; 
@@ -383,7 +383,7 @@ Renderer::Resources::GetShader( const std::string& name )
 	{
 		return itr->second;
 	}
-	// 需求的shader不存在，改用默认shader
+	// Requested shader doesn't exist, fall back to the default
 	else
 	{
 		return mCompiledShaders[ DEFAULT_SHADER ];
@@ -407,8 +407,8 @@ Renderer::Renderer()
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA ); 
 
-	// 编译内置shader
-	// TODO: 从文件加载Shader
+	// Compile the built-in shaders
+	// TODO: Load shaders from files
 	if( !mResources->CompileShader( DEFAULT_SHADER, DEFAULT_VERTEX_SHADER, DEFAULT_FRAGMENT_SHADER ) )
 	{
 		std::cerr << "ERROR: Failed to compile default shaders." << std::endl;
@@ -438,7 +438,7 @@ Renderer::~Renderer()
 void 
 Renderer::ResizeViewport( glm::ivec2 size )
 {
-	// 重新设置viewport
+	// Reset the viewport
 	glViewport( 0, 0, size.x, size.y );
 	mViewportSize = size;
 }

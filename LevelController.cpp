@@ -179,7 +179,7 @@ LevelController::ChangeLevelTo( const std::string& path )
 	// TODO: Release the previous level
 	mCurrentLevel = itr->second.get();
 
-	// 改变玩家出生点
+	// Change the player spawn
 	auto view_size = mRenderer.GetViewportSize();
 	const float view_width = static_cast<float>( view_size.x );
 	const float view_height = static_cast<float>( view_size.y );
@@ -195,7 +195,7 @@ LevelController::ChangeLevelTo( const std::string& path )
 	mPortals[PORTAL_1]->SetPair( mPortals[PORTAL_2].get() );
 	mPortals[PORTAL_2]->SetPair( mPortals[PORTAL_1].get() );
 
-	// 根据关卡数据生成静态物体
+	// Build static objects from the level data
 	auto& walls = mCurrentLevel->GetWalls();
 	for( auto& wall : walls )
 	{
@@ -319,33 +319,33 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 {
 	for( auto& portal : mPortals )
 	{
-		// 关闭颜色和深度缓存写入
+		// Disable color and depth buffer writes
 		glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
 		glDepthMask( GL_FALSE );
 		glDisable( GL_DEPTH_TEST );
 
-		// 开启模板测试，确保传送门的内容只画在传送门里面
+		// Enable stencil testing so portal contents only get drawn inside the portal
 		glEnable( GL_DEPTH_TEST );
-		// 设置模板测试为：
-		// 当模板像素值不等于current_recursion_level时，测试通过
+		// Stencil test is:
+		// Pass when the stencil pixel value is not equal to current_recursion_level
 		glStencilFunc( GL_NOTEQUAL, current_recursion_level, 0xFF );
-		// 测试不同通过的像素模板值+1，其他情况保持原有值
+		// Pixels that fail the test get stencil +1; everything else keeps its old value
 		glStencilOp( GL_INCR, GL_KEEP, GL_KEEP );
-		// 表示每个像素8位的模板值都可用（就是传送门最多可以嵌套255次)
+		// All 8 bits of each pixel's stencil are usable (so portals can nest at most 255 times)
 		glStencilMask( 0xFF );
 
-		// 绘制传送门窗口
-		// 比如这里时current_recursion_level = 0第一层
-		// 屏幕上传送门窗口覆盖的位置会因为规则 glStencilFunc( GL_NOTEQUAL, current_recursion_level, 0xFF )
-		// 不通过测试，因此它所覆盖的像素模板值会根据 glStencilOp( GL_INCR, GL_KEEP, GL_KEEP ) 进行current_recursion_level+1
-		// 结果是模板缓存中除了传送门窗口的像素是1，其他都是0
+		// Draw the portal window
+		// e.g. here current_recursion_level = 0, the first layer
+		// The screen pixels covered by the portal window fail the test because of glStencilFunc( GL_NOTEQUAL, current_recursion_level, 0xFF )
+		// so their stencil values get current_recursion_level+1 via glStencilOp( GL_INCR, GL_KEEP, GL_KEEP )
+		// Result: stencil buffer is 1 where the portal window is, 0 everywhere else
 		mRenderer.SetViewMatrix( view_matrix );
 		mRenderer.SetProjectionMatrix( projection_matrix );
 		mRenderer.RenderOneoff( portal->GetHoleRenderable() );
 
-		// 将当前的摄像机视图矩阵变换到配对的传送门后相对的位置
+		// Transform the current camera view matrix to the pose relative to the paired portal
 		glm::mat4 portal_view = portal->ConvertView( view_matrix );
-		// 因为新的虚拟摄像机在传送门后，为了不被传送门后的墙挡住视线，我们将投影矩阵的近裁切面设置在传送门的位置
+		// The new virtual camera sits behind the portal, so to keep the wall behind the portal from blocking the view, we set the projection's near plane at the portal
 		glm::vec3 cam_pos = utility::extract_view_postion_from_matrix( portal_view );
 		float distance_to_portal =  glm::length( cam_pos - portal->GetPairedPortal()->GetPosition() );
 		glm::mat4 portal_cam_proj_mat = 
@@ -356,31 +356,31 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 				1000.f
 			);
 
-		// 这是最底层了，渲染最底层的传送门内容
+		// This is the bottom layer, render the innermost portal contents
 		if( current_recursion_level == MAX_PORTAL_RECURSION )
 		{
-			// 允许颜色和深度写入
+			// Allow color and depth writes
 			glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
 			glDepthMask( GL_TRUE );
 
-			// 清理深度缓存
-			// 开启深度测试
+			// Clear the depth buffer
+			// Enable depth testing
 			glClear( GL_DEPTH_BUFFER_BIT );
 			glEnable( GL_DEPTH_TEST );
 
-			// 开启模板测试，确保我们只在传送门内绘制
+			// Enable stencil testing so we only draw inside the portal
 			glEnable( GL_STENCIL_TEST );
-			// 不再允许对模板进行写入
+			// Don't allow stencil writes anymore
 			glStencilMask( 0x00 );
-			// 只对通过模板测试（current_recursion_level + 1)的像素进行绘制
+			// Only draw pixels that pass the stencil test (current_recursion_level + 1)
 			glStencilFunc( GL_EQUAL, current_recursion_level + 1, 0xFF );
 
 			RenderBaseScene( portal_view, portal_cam_proj_mat );
 		}
 		else
 		{
-			// 如果这还不是最底层，我们进行递归
-			// 把这个传送门配对传送门的摄像机传到递归函数中进行绘制，并且将递归层数+1确保递归会结束
+			// If this isn't the bottom layer yet, recurse
+			// Pass this portal's paired-portal camera into the recursive call, and bump the recursion level by 1 so it actually ends
 			RenderPortals( portal_view, portal_cam_proj_mat, current_recursion_level + 1 );
 		}
 
@@ -390,10 +390,10 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 		glEnable(GL_STENCIL_TEST);
 		glStencilMask(0xFF);
 
-		// 上面渲染的传送门内部会不通过这个模板测试
+		// The portal interior we just rendered will fail this stencil test
 		glStencilFunc( GL_NOTEQUAL, current_recursion_level + 1, 0xFF );
 
-		// 不通过测试的像素模板值会-1，直到退回到递归最高层时我们最终的模板缓存会全部变为0
+		// Pixels that fail get stencil -1, until we unwind back to the top of the recursion and the stencil buffer is all 0s
 		glStencilOp( GL_DECR, GL_KEEP, GL_KEEP );
 
 		mRenderer.SetProjectionMatrix( portal_cam_proj_mat );
@@ -404,39 +404,39 @@ LevelController::RenderPortals( glm::mat4 view_matrix, glm::mat4 projection_matr
 		}
 	}
 	
-	// 关闭模板测试和颜色写入
+	// Disable stencil testing and color writes
 	glDisable( GL_STENCIL_TEST );
 	glStencilMask( 0x00 );
 	glColorMask( GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE );
 
-	// 开启深度测试和颜色写入
+	// Enable depth testing and color writes
 	glEnable( GL_DEPTH_TEST );
 	glDepthMask( GL_TRUE );
 
-	// 深度测试设置为通过，也就是所有东西都会被写入到深度缓存里
+	// Depth test set to always pass, so everything gets written into the depth buffer
 	glDepthFunc( GL_ALWAYS );
 	glClear( GL_DEPTH_BUFFER_BIT );
 
-	// 将两个传送门的窗口写入到深度缓存
+	// Write both portal windows into the depth buffer
 	mRenderer.SetProjectionMatrix( projection_matrix );
 	mRenderer.SetViewMatrix( view_matrix );
 	for( auto& portal : mPortals )
 	{
 		mRenderer.RenderOneoff( portal->GetHoleRenderable() );
 	}
-	// 将深度测试设回默认（近的挡住远的）
+	// Put the depth test back to default (near occludes far)
 	glDepthFunc( GL_LESS );
 
-	// 开启模板测试，关闭对模板缓存的写入
+	// Enable stencil testing, disable writes to the stencil buffer
 	glEnable(GL_STENCIL_TEST);
 	glStencilMask(0x00);
 	glStencilFunc( GL_LEQUAL, current_recursion_level, 0xFF );
 
-	// 一切恢复正常
+	// Everything back to normal
 	glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
 	glDepthMask( GL_TRUE );
 	glEnable(GL_DEPTH_TEST);
-	// 绘制正常的场景
+	// Draw the regular scene
 	RenderBaseScene( view_matrix, projection_matrix );
 	if( current_recursion_level != 0 )
 	{
@@ -450,13 +450,13 @@ LevelController::RenderBaseScene( glm::mat4 view_matrix, glm::mat4 projection_ma
 	RenderSkybox( view_matrix, projection_matrix );
 	mRenderer.SetProjectionMatrix( std::move( projection_matrix ) );
 	mRenderer.SetViewMatrix( std::move( view_matrix ) );
-	// 绘制除了“真传送门”以外的场景
+	// Draw everything except the "real portal"
 	auto& walls = mCurrentLevel->GetWalls();
 	for( auto& wall : walls )
 	{
 		mRenderer.RenderOneoff( wall.render_instance.get() );
 	}
-	// 绘制传送门的框
+	// Draw the portal frames
 	for( auto& portal : mPortals )
 	{
 		if( portal->HasBeenPlaced() )

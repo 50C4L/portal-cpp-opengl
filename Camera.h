@@ -7,17 +7,17 @@
 namespace portal
 {
 	///
-	/// 摄像机类
-	/// 提供视图矩阵和投影矩阵
+	/// Camera class
+	/// Provides the view matrix and the projection matrix
 	/// 
 	class Camera
 	{
 	public:
 		///
-		/// 构造函数
+		/// Constructor
 		/// 
 		/// @param view_width, view_height
-		///		视口的大小
+		///		Viewport size
 		/// 
 		Camera( float view_width, float view_height );
 		Camera( float view_width, 
@@ -28,51 +28,51 @@ namespace portal
 		~Camera();
 
 		///
-		/// 获取视图矩阵
+		/// Get the view matrix
 		/// 
 		/// @return glm::mat4
-		///		就是视图矩阵
+		///		Yep, that's the view matrix
 		/// 
 		glm::mat4 GetViewMatrix();
 		void UpdateViewMatrix();
 
 		///
-		/// 获取投影矩阵
+		/// Get the projection matrix
 		/// 
 		/// @return glm::mat4
-		///		就是投影矩阵 :)
+		///		Yep, that's the projection matrix :)
 		/// 
 		glm::mat4 GetProjectionMatrix();
 		void UpdateProjectionMatrix();
 
 		///
-		/// 更新摄像机
+		/// Update the camera
 		/// 
 		/// @param pitch
-		///		垂直方向转动的角度
+		///		Vertical rotation angle
 		/// 
 		/// @param yaw
-		///		水平方向转动的角度
+		///		Horizontal rotation angle
 		/// 
 		/// @param translate
-		///		XYZ方向的移动
+		///		Movement along XYZ
 		/// 
 		void UpdateCamera( float pitch = 0.f, float yaw = 0.f, glm::vec3 translate = glm::vec3{ 0.f } );
 
 		///
-		/// 设置焦点，设置后会自动更新视图矩阵
+		/// Set the look-at point; the view matrix updates automatically after this
 		///	
 		/// @param target
-		///		焦点
+		///		Look-at point
 		/// 
 		void SetTarget( glm::vec3 target );
 		glm::vec3 GetTarget();
 
 		///
-		/// 把摄像机移动到指定点
+		/// Move the camera to a given point
 		/// 
 		/// @param pos
-		///		目标坐标
+		///		Target coordinates
 		/// 
 		void SetPosition( glm::vec3 pos );
 		glm::vec3 GetPosition();
@@ -82,19 +82,19 @@ namespace portal
 		glm::vec3 GetRightDirection();
 
 	private:
-		glm::vec3 mPosition;             ///< 摄像机位置
-		glm::vec3 mCameraFrontDirection; ///< 摄像机向前方向 - FPS模式下Y轴不变
-		glm::vec3 mCameraUpDirection;    ///< 摄像机头顶方向
-		glm::vec3 mCameraRightDirection; ///< 摄像机右方
-		glm::vec3 mTarget;               ///< 摄像机的焦点
+		glm::vec3 mPosition;             ///< Camera position
+		glm::vec3 mCameraFrontDirection; ///< Camera forward direction - Y stays put in FPS mode
+		glm::vec3 mCameraUpDirection;    ///< Camera up direction
+		glm::vec3 mCameraRightDirection; ///< Camera right
+		glm::vec3 mTarget;               ///< Camera look-at point
 
-		float mAspectRatio; ///< 画面比例
-		float mFov;         ///< 视野
-		float mNearClip;    ///< 近裁切面
-		float mFarClip;     ///< 远裁切面
+		float mAspectRatio; ///< Aspect ratio
+		float mFov;         ///< Field of view
+		float mNearClip;    ///< Near clip plane
+		float mFarClip;     ///< Far clip plane
 
-		glm::mat4 mViewMat;       ///< 视图矩阵
-		glm::mat4 mProjectionMat; ///< 投影矩阵
+		glm::mat4 mViewMat;       ///< View matrix
+		glm::mat4 mProjectionMat; ///< Projection matrix
 	};
 }
 

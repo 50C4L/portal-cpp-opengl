@@ -8,24 +8,24 @@ namespace portal
 {
 	class Portalable;
 	///
-	/// 传送门本身分为两部分
-	/// 一部分时门框，只是一个带透明纸的贴图
-	/// 另一部分是作为显示传送门内容的模型，这里用一个椭圆形来表示，详情看`generate_portal_ellipse_hole`
+	/// A portal itself is two parts
+	/// One part is the frame, just a texture with transparency
+	/// The other is the model that actually shows the portal contents, represented here as an ellipse — see `generate_portal_ellipse_hole`
 	/// 
 	class Portal
 	{
 	public:
 		///
-		/// 构造函数
+		/// Constructor
 		/// 
 		/// @param texture
-		///		传送门用到的贴图（门框）
+		///		Texture used by the portal (the frame)
 		/// 
 		Portal( TextureInfo* texture, physics::Physics& physics );
 		~Portal();
 
 		///
-		/// 设置与本传送门配对的传送门
+		/// Pair this portal with another one
 		/// 
 		/// @param paired_portal
 		///		Pointer to Portal
@@ -33,33 +33,33 @@ namespace portal
 		void SetPair( Portal* paired_portal );
 
 		///
-		/// 根据提供的位置和方向更新传送门的方位
+		/// Update the portal's pose from the given position and direction
 		/// 
 		/// @param pos
-		///		传送门的新位置
+		///		The portal's new position
 		/// 
 		/// @param dir
-		///		传送门面向的方向
+		///		The direction the portal faces
 		/// 
 		/// @return 
-		///		True表示有更新到
+		///		True if it actually got updated
 		/// 
 		bool PlaceAt( glm::vec3 pos, glm::vec3 dir, const btCollisionObject* attched_surface_co );
 
 		///
-		/// 获取门框和门面的渲染体
+		/// Get the frame and hole renderables
 		/// 
 		Renderer::Renderable* GetFrameRenderable();
 		Renderer::Renderable* GetHoleRenderable();
 
 		///
-		/// 传送门是否被放置
+		/// Whether the portal has been placed
 		/// 
 		bool HasBeenPlaced();
 
 		///
-		/// 传送门是否可用
-		/// 取决于配对的传送门是否已经被放置，以及玩家摄像机是否存在
+		/// Whether the portal is usable
+		/// Depends on whether the paired portal has been placed, and whether the player camera exists
 		/// 
 		/// @return 
 		///		True if active
@@ -67,12 +67,12 @@ namespace portal
 		bool IsLinkActive();
 
 		///
-		/// 获取配对的传送门指针
+		/// Get a pointer to the paired portal
 		/// 
 		Portal* GetPairedPortal();
 
 		///
-		///  获取传送门位置
+		///  Get the portal position
 		/// 
 		glm::vec3 GetPosition();
 
@@ -84,56 +84,57 @@ namespace portal
 		glm::vec3 GetUpDir();
 
 		///
-		/// 将提供的视图矩阵转换到配对的传送门相对位置的视图矩阵
+		/// Convert the given view matrix to the view matrix at the paired portal's relative pose
 		/// 
 		/// @param view_matrix
-		///		当前到本传送门的视图矩阵
+		///		Current view matrix looking at this portal
 		/// 
 		/// @return
-		///		转换后配对传送门后的视图矩阵
+		///		The converted view matrix looking out the paired portal
 		/// 
 		glm::mat4 ConvertView( const glm::mat4& view_matrix );
 
 		///
-		/// 获取附着墙面的物理碰撞体
+		/// Get the physics collider of the attached wall
 		/// 
 		const btCollisionObject* GetAttachedCollisionObject();
 
 		///
-		/// 将提供的点转换到出口的相对位置
+		/// Convert the given point to the exit portal's relative position
 		/// 
 		/// @param point
-		///		要穿越的点（世界坐标）
+		///		The point to send through (world space)
 		/// 
 		glm::vec3 ConvertPointToOutPortal( glm::vec3 point );
 
 		///
-		/// 将提供的向量转换到出口的相对位置
+		/// Convert the given vector to the exit portal's relative position
 		/// 
 		/// @param direction
-		///		向量
+		///		The vector
 		/// 
 		/// @param old_start_pos
-		///		转换前的方向起始点
+		///		Direction origin before the conversion
 		/// 
 		/// @param new_start_pos
-		///		转换后的方向起始点
+		///		Direction origin after the conversion
 		/// 
 		glm::vec3 ConvertDirectionToOutPortal( glm::vec3 direction, glm::vec3 old_start_pos, glm::vec3 new_start_pos );
 
 	private:
-		glm::vec3 mFaceDir;                    ///< 传送门面向的方向
-		glm::vec3 mPosition;                   ///< 传送门位置
-		glm::vec3 mOriginFaceDir;              ///< 传送门初始面向方向
-		glm::vec3 mUpDir;                      ///< 传送门上方向
-		glm::vec3 mRightDir;                   ///< 传送门的右方
-		Renderer::Renderable mFrameRenderable; ///< 门框渲染体
-		Renderer::Renderable mHoleRenderable;  ///< 门面渲染体
-		bool mHasBeenPlaced;                   ///< 是否被放置
+		glm::vec3 mFaceDir;                    ///< Direction the portal faces
+		glm::vec3 mPosition;                   ///< Portal position
+		glm::vec3 mOriginFaceDir;              ///< Portal's original facing direction
+		glm::vec3 mUpDir;                      ///< Portal up
+		glm::vec3 mRightDir;                   ///< Portal right
+		Renderer::Renderable mFrameRenderable; ///< Frame renderable
+		Renderer::Renderable mHoleRenderable;  ///< Hole renderable
+		bool mHasBeenPlaced;                   ///< Whether it's been placed
 
-		Portal* mPairedPortal;                 ///< 配对的传送门指针
-		// 当传送门被放置后，如果玩家在传送门的门口区域内，传送门附着的墙壁不能与玩家发生碰撞玩家才能穿过
-		// 传送门。因此我们需要一圈的空气墙作为门框来挡住玩家
+		Portal* mPairedPortal;                 ///< Pointer to the paired portal
+		// Once a portal is placed, if the player is in the doorway region, the wall the portal is stuck to
+		// can't collide with the player — otherwise they couldn't walk through.
+		// So we need a ring of air walls around the frame to keep the player from clipping past
 		std::vector<std::unique_ptr<physics::Physics::Box>> mFrameBoxes;
 		std::unique_ptr<physics::Physics::Box> mEntryTrigger;
 		std::unique_ptr<physics::Physics::Box> mTeleportTrigger;

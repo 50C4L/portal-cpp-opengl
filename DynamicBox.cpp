@@ -32,7 +32,7 @@ DynamicBox::~DynamicBox()
 void
 DynamicBox::Teleport( Portal& in_portal )
 {
-	// 计算传送后位置
+	// Figure out the position after teleporting
 	glm::vec3 prev_pos = mCollisionBox->GetPosition();
 	glm::vec3 new_pos = in_portal.ConvertPointToOutPortal( prev_pos );
 	mCollisionBox->SetPosition( new_pos );

@@ -66,9 +66,9 @@ Player::Spawn( glm::vec3 position, std::shared_ptr<Camera> camera )
 void
 Player::Update()
 {
-	// 如果Y值没有变就当作我们站在地上
-	// TODO: 往下一个单位发射射线检测是否有碰撞体，这样更准确.
-	// 不过目前bullet raytest好像有问题，有时候返回的碰撞法线是NaN导致错误
+	// If Y hasn't changed, treat that as standing on the ground
+	// TODO: Cast a ray one unit down to check for a collider. That'd be more accurate.
+	// Though Bullet's raytest seems kinda broken right now — sometimes the hit normal comes back as NaN and blows things up
 	auto new_pos = mCollisionCapsule->GetPosition();
 	mIsGrounded = abs( mPreviousYPos - new_pos.y ) <= 0.001;
 	mPreviousYPos = new_pos.y;
@@ -192,22 +192,22 @@ Player::Look( float yaw_angle, float pitch_angle )
 void 
 Player::Teleport( Portal& in_portal )
 {
-	// 计算传送后摄像机位置
+	// Figure out the camera position after teleporting
 	glm::vec3 pos = in_portal.ConvertPointToOutPortal( mMainCamera->GetPosition() );
 	mMainCamera->SetPosition( pos );
 
-	// 计算传送后的摄像机焦点
+	// Figure out the camera look-at point after teleporting
 	glm::vec3 target = mMainCamera->GetTarget();
 	mMainCamera->SetTarget( in_portal.ConvertPointToOutPortal( std::move( target ) ) );
 
-	// 根据新的摄像机位置计算新的碰撞体位置
+	// Derive the new capsule position from the new camera position
 	pos.y -= PLAYER_CAMERA_OFFSET;
 	pos += in_portal.GetPairedPortal()->GetFaceDir() * 0.1f;
 	glm::vec3 prev_pos = mCollisionCapsule->GetPosition();
 	mCollisionCapsule->SetPosition( pos );
 
-	// 传送后保持玩家的线性运动惯性
-	// 将方向根据出口的方向作出转换
+	// Keep the player's linear momentum after teleporting
+	// Transform the direction to match the exit portal
 	glm::vec3 velocity = mCollisionCapsule->GetLinearVelocity();
 	velocity = in_portal.ConvertDirectionToOutPortal( std::move( velocity ), std::move( prev_pos ), std::move( pos ) );
 	velocity *= 1.f - mCollisionCapsule->GetLinearDamping();

@@ -5,8 +5,8 @@ namespace portal
 {
 	namespace level
 	{
-		// 物理分组
-		// 用于区分哪些组之间可以发生碰撞
+		// Physics groups
+		// Used to decide which groups are allowed to collide with each other
 		enum class PhysicsGroup : int
 		{
 			RAY = 0x01,

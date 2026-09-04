@@ -14,8 +14,8 @@ namespace portal
 		using Ptr = std::shared_ptr<Application>;
 
 		///
-		/// 打包参数传给gluInit()
-		/// 并没有用上
+		/// Pack args to pass to gluInit()
+		/// Not actually used
 		/// 
 		struct Params
 		{
@@ -24,10 +24,10 @@ namespace portal
 		};
 
 		///
-		/// 创建并返回一个std::shared_ptr<Application>
+		/// Create and return a std::shared_ptr<Application>
 		/// 
 		/// @param parmas
-		///		命令行参数 （没有用）
+		///		Command-line args (unused)
 		/// 
 		/// @return
 		///		std::shared_ptr<Application>
@@ -35,7 +35,7 @@ namespace portal
 		static Ptr CreateApp( Params params );
 
 		///
-		/// GLUT回调函数，具体看Application.cpp
+		/// GLUT callbacks, see Application.cpp for the details
 		/// 
 		static void GLUTRenderCallback();
 		static void GLUTResizeCallback( int width, int height );
@@ -47,58 +47,58 @@ namespace portal
 
 	public:
 		///
-		/// 用CreateApp()，不要直接构造
+		/// Use CreateApp(), don't construct this directly
 		///
 		Application( Params params );
 
 		/// 
-		/// 初始化所有东西
+		/// Initialize everything
 		/// 
 		bool Initialize();
 
 		///
-		/// 进入主循环
+		/// Enter the main loop
 		///
 		void Run();
 
 		///
-		/// 更新游戏逻辑
+		/// Update game logic
 		/// 
 		void Update();
 
 		///
-		/// 渲染一帧
+		/// Render one frame
 		/// 
 		void Render();
 
 	private:
 		///
-		/// 改变视口大小
+		/// Change the viewport size
 		/// 
 		/// @param width
-		///		宽度
+		///		Width
 		/// 
 		/// @param height
-		///		高度
+		///		Height
 		/// 
 		void ResizeViewport( int width, int height );
 
 		///
-		/// 鼠标位置改变（移动）
+		/// Mouse position changed (moved)
 		/// 
 		/// @param x, y
-		///		鼠标窗口坐标
+		///		Mouse coordinates in the window
 		/// 
 		void MouseMoved( int x, int y );
 
 		///
-		/// 键盘按键更新
+		/// Keyboard key update
 		/// 
 		/// @param key
-		///		键位的ASCII
+		///		ASCII of the key
 		/// 
 		/// @param is_down
-		///		是否被按下
+		///		Whether it's pressed
 		/// 
 		void KeyChanged( unsigned char key, bool is_down );
 

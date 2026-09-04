@@ -35,7 +35,7 @@ namespace
 		};
 	}
 
-	// 用三角扇画一个椭圆面，用作传送门的门
+	// Draw an ellipse with a triangle fan, used as the portal hole
 	const int ELLIPSE_NUM_SIDES = 20;
 	std::vector<Vertex>
 	generate_portal_ellipse_hole( float radius_x, float radius_y )
@@ -82,7 +82,7 @@ Portal::Portal( TextureInfo* texture, physics::Physics& physics )
 	, mAttchedCO( nullptr )
 	, mPhysics( physics )
 {
-	// 创建门框碰撞体
+	// Create the frame colliders
 	const glm::vec3 front_offset = mFaceDir * PORTAL_FRAME_TICKNESS / 2.f;
 	mFrameBoxes.emplace_back(
 		physics.CreateBox( 
@@ -113,7 +113,7 @@ Portal::Portal( TextureInfo* texture, physics::Physics& physics )
 			static_cast<int>( PhysicsGroup::PORTAL_FRAME ),
 			static_cast<int>( PhysicsGroup::PLAYER ) ) );
 
-	// 创建两个触发区
+	// Create the two trigger volumes
 	const bool is_ghost = true;
 	mEntryTrigger = physics.CreateBox( 
 			mPosition +  mFaceDir * 3.f * PORTAL_ENTRY_TRIGGER_OFFSET,
@@ -145,22 +145,22 @@ Portal::SetPair( Portal* paired_portal )
 bool 
 Portal::PlaceAt( glm::vec3 pos, glm::vec3 dir, const btCollisionObject* attched_surface_co )
 {
-	// 使用`is_vector_has_nan_value`来检测`pos`和`dir`是否含有NaN值，
-	// Bullet物理引擎在做射线检测时有时候结果会带有NaN值，就很烦 :(
+	// Use `is_vector_has_nan_value` to check whether `pos` and `dir` contain NaN,
+	// Bullet's raycasts sometimes come back with NaN in them, which is annoying :(
 	if( !attched_surface_co || is_vector_has_nan_value( pos ) || is_vector_has_nan_value( dir ) )
 	{
 		return false;
 	}
 
 	mAttchedCO = attched_surface_co;
-	// Bullet物理引擎的射线检测碰撞法线有误差 大概是 < 0.00015
-	// 这里小于这个值的都当作0
+	// Bullet raycast hit normals have some error, roughly < 0.00015
+	// Anything smaller than that we treat as 0
 	dir = round_vector_to_zero( std::move( dir ) );
 	
 	glm::vec3 rot_axis = mUpDir;
 	if( mOriginFaceDir != dir && mOriginFaceDir != dir * -1.f )
 	{
-		// 如果门被放在水平位置，上和右方向要换过来
+		// If the portal is placed on a horizontal surface, swap up and right
 		if( abs( dir.y ) >= abs( dir.z ) && abs( dir.y ) >= abs( dir.x ) )
 		{
 			mRightDir = glm::cross( mOriginFaceDir, dir );
@@ -183,8 +183,8 @@ Portal::PlaceAt( glm::vec3 pos, glm::vec3 dir, const btCollisionObject* attched_
 	mPosition = pos;
 	mFaceDir = dir;
 
-	// 根据上面求得的位置和旋转变量来更新门口和门面的模型矩阵
-	// 求它们之间的夹角
+	// Use the position and rotation we just got to update the doorway and hole model matrices
+	// Find the angle between them
 	float theta = std::acos( glm::dot( mOriginFaceDir, dir ) );
 	mFrameRenderable.Translate( pos + mFaceDir * 0.2f );
 	mFrameRenderable.Rotate( theta, rot_axis );
@@ -193,7 +193,7 @@ Portal::PlaceAt( glm::vec3 pos, glm::vec3 dir, const btCollisionObject* attched_
 
 	mHasBeenPlaced = true;
 	
-	// 确保门框也做同样的位移和旋转
+	// Make sure the frame colliders get the same translation and rotation
 	const glm::vec3 front_offset = mFaceDir * PORTAL_FRAME_TICKNESS / 2.f;
 	for( size_t i = 0; i < mFrameBoxes.size(); i ++)
 	{
@@ -220,14 +220,14 @@ Portal::PlaceAt( glm::vec3 pos, glm::vec3 dir, const btCollisionObject* attched_
 
 		mFrameBoxes[i]->SetTransform( std::move( trans ) );
 	}
-	// 门口触发区
+	// Doorway trigger
 	{
 		glm::mat4 trans( 1.f );
 		trans = glm::translate( trans, pos + mFaceDir * 3.f *  PORTAL_ENTRY_TRIGGER_OFFSET );
 		trans = glm::rotate( trans, theta, rot_axis );
 		mEntryTrigger->SetTransform( std::move( trans ) );
 	}
-	// 传送触发区
+	// Teleport trigger
 	{
 		glm::mat4 trans( 1.f );
 		trans = glm::translate( trans, pos - mFaceDir * PORTAL_ENTRY_TRIGGER_OFFSET );
@@ -287,8 +287,8 @@ Portal::CheckPortalable( Portalable* portalable )
 		const bool is_detected = IsPortalableEntering( portalable );
 		if( mAttchedCO )
 		{
-			// 当物体在传送门判定区内，关闭物体与传送门附着面的碰撞检测，使得物体可以“穿过”传送门
-			// 当两个门在同一面墙时，物体进入任意一个门的警戒区都会关闭与墙壁的碰撞
+			// While an object is inside the portal's detection zone, disable collision with the attached wall so it can "go through"
+			// When both portals sit on the same wall, entering either portal's warning zone will disable wall collision
 			if( mAttchedCO == mPairedPortal->GetAttachedCollisionObject() &&
 				is_detected != mPairedPortal->IsPortalableEntering( portalable ) )
 			{
@@ -341,7 +341,7 @@ Portal::GetAttachedCollisionObject()
 glm::mat4 
 Portal::ConvertView( const glm::mat4& view_matrix )
 {
-	// 先将视图矩阵转换到本传送门的本地空间，再旋转180度，然后用出口的逆变换矩阵转换到世界空间
+	// First transform the view matrix into this portal's local space, rotate 180 degrees, then use the exit's inverse to get back to world space
 	glm::mat4 model_view = view_matrix * mHoleRenderable.GetTransform();
 	glm::mat4 final_view = model_view
 						   * glm::rotate( glm::mat4( 1.f ), glm::radians( 180.f ), glm::vec3( 0.f, 1.f, 0.f ) )
@@ -357,7 +357,7 @@ Portal::ConvertPointToOutPortal( glm::vec3 point )
 		return glm::vec3{ 0.f };
 	}
 
-	// 同ConvertView
+	// Same as ConvertView
 	return mPairedPortal->GetHoleRenderable()->GetTransform()
 		* glm::rotate( glm::mat4( 1.f ), glm::radians( 180.f ), glm::vec3( 0.f, 1.f, 0.f ) ) 
 		* glm::inverse( mHoleRenderable.GetTransform() ) 
@@ -367,9 +367,9 @@ Portal::ConvertPointToOutPortal( glm::vec3 point )
 glm::vec3 
 Portal::ConvertDirectionToOutPortal( glm::vec3 direction, glm::vec3 old_start_pos, glm::vec3 new_start_pos )
 {
-	// 由于转换的是方向不是一个点，这里先找出从出发点向给与方向上的一个点
-	// 然后把该点进行变换，得到新的目标点后与新的出发点组成一个新的单位方向
-	// 再乘以老方向的"长度“
+	// Since we're converting a direction, not a point, first find a point from the origin along the given direction
+	// Then transform that point, make a new unit direction from the new origin to the new target
+	// Then multiply by the old direction's "length"
 	glm::vec3 target = old_start_pos + glm::normalize( direction );
 	target = ConvertPointToOutPortal( std::move( target ) );
 	return glm::normalize( target - new_start_pos ) * glm::length( direction );

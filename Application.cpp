@@ -14,17 +14,17 @@ using namespace portal;
 
 namespace
 {
-	// 默认窗口大小
+	// Default window size
 	constexpr int DEFAULT_WIDTH = 2560;
 	constexpr int DEFAULT_HEIGHT = 1440;
-	constexpr unsigned int UPDATE_TIME = 17; // 游戏逻辑每秒更新60次, 16.66666ms间隔
+	constexpr unsigned int UPDATE_TIME = 17; // Game logic updates 60 times a second, 16.66666ms interval
 }
 
 ///
-/// 因为glutDisplayFunc等函数只支持C样式的回调函数
-/// 这里只能用一个全局的Application instance来提供封装好的接口 Application::Render, Application::ResizeViewport
+/// Because glutDisplayFunc and friends only support C-style callbacks,
+/// we have to use a global Application instance to expose the wrapped interfaces Application::Render, Application::ResizeViewport
 /// 
-/// 然后通过 GLUTRenderCallback, GLUTResizeCallback这些静态函数作为回调函数再调用上面的封装函数
+/// Then GLUTRenderCallback, GLUTResizeCallback and the other statics act as the actual callbacks and call those wrapped functions
 /// 
 std::shared_ptr<Application> Application::sInstance;
 
@@ -136,16 +136,16 @@ Application::Application( Params params )
 bool
 Application::Initialize()
 {
-	// 初始化glut
+	// Initialize glut
 	glutInit( &mParams.argc, mParams.argv);
-	glutInitContextVersion( 3, 3 ); // 至少是OpenGL 3.3
+	glutInitContextVersion( 3, 3 ); // At least OpenGL 3.3
 	glutInitContextProfile( GLUT_CORE_PROFILE );
 	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
 	glutInitWindowSize( DEFAULT_WIDTH, DEFAULT_HEIGHT );
 	glutCreateWindow( "Shitty portal" );
 	glutSetCursor( GLUT_CURSOR_NONE );
 
-	// 初始化glew
+	// Initialize glew
 	auto result = glewInit();
 	if( result != GLEW_OK )
 	{
@@ -153,24 +153,24 @@ Application::Initialize()
 		return false;
 	}
 
-	// 注册glut回调
+	// Register glut callbacks
 	glutDisplayFunc( GLUTRenderCallback );
 	glutReshapeFunc( GLUTResizeCallback );
 	constexpr int not_used_value = 0;
 	glutTimerFunc( UPDATE_TIME, GLUTUpdateCallback, not_used_value );
 	glutKeyboardFunc( GLUTKeyboardDownCallback );
 	glutKeyboardUpFunc( GLUTKeyboardUpCallback );
-	// 鼠标设在窗口在中心
+	// Stick the mouse in the center of the window
 	glutWarpPointer( mWindowWidth/2, mWindowHeight/2 );
 	glutPassiveMotionFunc( GLUTMouseMoveCallback );
 	glutMouseFunc( GLUTMousePressedCallback );
 
-	// 初始化渲染器
+	// Initialize the renderer
 	mRenderer = std::make_unique<Renderer>();
 	mRenderer->ResizeViewport( { mWindowWidth, mWindowHeight } );
 
-	// 加载资源
-	// TODO: 每个关卡应该独立加载
+	// Load resources
+	// TODO: Each level should load its own stuff
 	mRenderer->GetResources().LoadTexture( "resources/textures/white_wall.jpg" );
 	mRenderer->GetResources().LoadTexture( "resources/textures/blueportal.png" );
 	mRenderer->GetResources().LoadTexture( "resources/textures/orangeportal.png" );

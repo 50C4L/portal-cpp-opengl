@@ -28,8 +28,8 @@ namespace portal
 	};
 
 	///
-	/// 简易（简陋）渲染器
-	/// 只能在获取OpenGL Context后使用
+	/// Simple (crude) renderer
+	/// Can only be used after an OpenGL context has been acquired
 	/// 
 	class Renderer
 	{
@@ -41,38 +41,38 @@ namespace portal
 		static const std::string PORTAL_FRAME_SHADER;
 
 		///
-		/// Shader类
+		/// Shader class
 		/// 
 		class Shader
 		{
 		public:
 			///
-			/// 默认构造函数，将会编译内置shader
+			/// Default constructor, will compile the built-in shader
 			/// 
 			Shader();
 
 			///
-			/// 参数构造
+			/// Parameterized constructor
 			/// 
 			/// @param vertex_shader
-			///		顶点shader文本
+			///		Vertex shader source
 			/// 
 			/// @param fragment_shader
-			///		片源shader文本
+			///		Fragment shader source
 			/// 
 			Shader( const std::string& vertex_shader, const std::string& fragment_shader );
 			~Shader();
 
 			///
-			/// 检查Shader是否编译成功
+			/// Check whether the shader compiled successfully
 			/// 
 			/// @return bool
-			///		True表示编译成功
+			///		True means compile succeeded
 			/// 
 			bool IsValid() const;
 
 			///
-			/// 获取Shader id
+			/// Get the shader id
 			/// 
 			/// @return unsigned int
 			///		OpenGL Shader Program id
@@ -80,7 +80,7 @@ namespace portal
 			unsigned int GetId() const;
 
 			///
-			/// 设置模型矩阵
+			/// Set the model matrix
 			/// 
 			/// @param matrix
 			///		Const reference to matrix
@@ -88,7 +88,7 @@ namespace portal
 			void SetModelMatrix( const glm::mat4& matrix );
 
 			///
-			/// 设置视图矩阵
+			/// Set the view matrix
 			/// 
 			/// @param matrix
 			///		Const reference to view matrix
@@ -96,7 +96,7 @@ namespace portal
 			void SetViewMatrix( const glm::mat4& matrix );
 
 			///
-			/// 设置投影矩阵
+			/// Set the projection matrix
 			/// 
 			/// @param matrix
 			///		Const reference to projection matrix
@@ -104,10 +104,10 @@ namespace portal
 			void SetProjectionMatrix( const glm::mat4& matrix );
 
 			///
-			///	设置矩阵
+			///	Set a matrix
 			/// 
 			/// @param location
-			///		shader中通过glGetUniformLocation获取的变量位置
+			///		Uniform location in the shader, from glGetUniformLocation
 			/// 
 			/// @param matrix
 			///		Const reference to the matrix you want
@@ -123,14 +123,14 @@ namespace portal
 		};
 
 		///
-		/// 可渲染对象
-		/// 包括了它用到的Shader id, texture id, 缓存id
+		/// A renderable object
+		/// Includes the shader id, texture id, and buffer ids it uses
 		/// 
 		class Renderable
 		{
 		public:
 			///
-			/// 顶点列表绘制类型
+			/// Vertex list draw type
 			/// 
 			enum class DrawType
 			{
@@ -140,19 +140,19 @@ namespace portal
 			};
 
 			///
-			/// 构造函数
+			/// Constructor
 			/// 
 			/// @param vertices
-			///		顶点
+			///		Vertices
 			/// 
 			/// @param shader_name
-			///		本次渲染用到的shader
+			///		Shader used for this draw
 			/// 
 			/// @param texture_id
-			///		本次渲染用到的贴图
+			///		Texture used for this draw
 			/// 
 			/// @param draw_type
-			///		绘制类型，默认三角形
+			///		Draw type, triangles by default
 			/// 
 			Renderable( 
 				std::vector<Vertex>&& vertices, 
@@ -162,7 +162,7 @@ namespace portal
 			~Renderable();
 
 			///
-			/// 获取VAO Id
+			/// Get the VAO id
 			/// 
 			/// @return unsigned int
 			///		OpenGL VAO id
@@ -170,7 +170,7 @@ namespace portal
 			unsigned int GetVAO() const;
 
 			///
-			/// 获取顶点数量
+			/// Get the vertex count
 			/// 
 			/// @return int
 			///		Number of vertices
@@ -178,21 +178,21 @@ namespace portal
 			int GetNumberOfVertices() const;
 
 			///
-			/// 平移
+			/// Translate
 			/// 
 			/// @param offset
-			///		平移量
+			///		Translation offset
 			/// 
 			void Translate( glm::vec3 offset );
 
 			///
-			/// 选择
+			/// Rotate
 			/// 
 			/// @param angle
-			///		旋转角度
+			///		Rotation angle
 			/// 
 			/// @param axis
-			///		转轴
+			///		Axis of rotation
 			/// 
 			void Rotate( float angle, glm::vec3 axis );
 
@@ -217,8 +217,8 @@ namespace portal
 		};
 
 		///
-		/// 简陋渲染资源管理器
-		/// 负责加载贴图，shader
+		/// Crude render resource manager
+		/// Responsible for loading textures and shaders
 		/// 
 		class Resources
 		{
@@ -227,36 +227,36 @@ namespace portal
 			~Resources() = default;
 
 			///
-			/// 从文件加载贴图
+			/// Load a texture from file
 			/// 
 			/// @param path
-			///		贴图文件相对路径
+			///		Relative path to the texture file
 			/// 
 			/// @return bool
-			///		True表示成功
+			///		True means success
 			/// 
 			bool LoadTexture( const std::string& path );
 
 			///
-			/// 读取立方体贴图文件
-			/// 请确保 files 参数的文件路径顺序是
+			/// Load cubemap files
+			/// Make sure the file paths in `files` are ordered as
 			/// 
 			/// @param files
-			///		六个方向的贴图文件路径，请确保顺序正确
+			///		Texture paths for the six faces, make sure the order is right
 			/// 
 			/// @param name
-			///		立方体贴图唯一名字，用于加载后查找
+			///		Unique name for the cubemap, used to look it up after loading
 			/// 
 			/// @return bool
-			///		True表示成功
+			///		True means success
 			/// 
 			bool LoadCubeMaps( std::vector<std::string> files, const std::string& name );
 
 			///
-			/// 获取已加载的贴图Id
+			/// Get the id of an already loaded texture
 			/// 
 			/// @param path
-			///		贴图文件的路径
+			///		Path to the texture file
 			/// 
 			/// @return
 			///		Const referecen to TextureInfo
@@ -264,25 +264,25 @@ namespace portal
 			TextureInfo* GetTextureInfo( const std::string& path );
 
 			///
-			/// 编译Shader，成功编译后Shader的program id会存放在mCompiledShaders里。
-			/// Key是提供的名字
+			/// Compile a shader. After a successful compile the program id lives in mCompiledShaders.
+			/// The key is the name you provide
 			/// 
 			/// @param name
-			///		存放在map中对应的名字
+			///		The name stored as the map key
 			/// 
 			/// @param vertex_shader
-			///		顶点shader
+			///		Vertex shader
 			/// 
 			/// @param fragment_shader
-			///		片源shader
+			///		Fragment shader
 			/// 
 			/// @return
-			///		true成功编译，false失败
+			///		true on success, false on failure
 			/// 
 			bool CompileShader( const std::string& name, std::string vertex_shader, std::string fragment_shader );
 
 			///
-			/// 根据名字查找并返回已编译的shader
+			/// Look up a compiled shader by name
 			/// 
 			/// @param name
 			///		THE NAME
@@ -306,12 +306,12 @@ public:
 		glm::ivec2 GetViewportSize();
 
 		///
-		/// 渲染!!!
+		/// Render!!!
 		/// 
 		void RenderOneoff( Renderable* renderable_obj );
 
 		///
-		/// 将提供的摄像机作为之后渲染的摄像机
+		/// Use the given camera as the camera for subsequent renders
 		/// 
 		/// @param camera
 		///		Raw pointer to Camera

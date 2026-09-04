@@ -13,11 +13,11 @@ namespace portal
 	class Portal;
 
 	///
-	/// 简易玩家类
-	/// 使用胶囊作为物理碰撞体，移动、跳跃均作用于胶囊本身，摄像机位置绑定在胶囊上半部分。
-	/// 胶囊本身被设置为不能旋转，摄像机视线决定玩家向前移动的方向。
-	/// WASD控制玩家四方向移动，空格键跳跃。
-	/// 左键在目标表面开启传送门1（蓝色），右键传送门2（橙色）
+	/// Simple player class
+	/// Uses a capsule as the physics collider. Movement and jumping act on the capsule itself; the camera sits on the upper half.
+	/// The capsule itself is locked so it can't rotate; look direction decides which way "forward" is.
+	/// WASD for four-way movement, space to jump.
+	/// Left click opens portal 1 (blue) on the target surface, right click portal 2 (orange)
 	/// 
 	class Player : public Portalable
 	{
@@ -30,7 +30,7 @@ namespace portal
 		};
 
 		///
-		/// 构造函数
+		/// Constructor
 		/// 
 		Player( physics::Physics& physics );
 		~Player();
@@ -38,10 +38,10 @@ namespace portal
 		virtual void Teleport( Portal& in_portal ) override;
 
 		///
-		/// 玩家出生到指定地点并初始化
+		/// Spawn the player at the given spot and initialize
 		/// 
 		/// @param position
-		///		出生点
+		///		Spawn point
 		/// 
 		/// @param camera
 		///		the camera that will be updated with the player
@@ -49,12 +49,12 @@ namespace portal
 		void Spawn( glm::vec3 position, std::shared_ptr<Camera> camera );
 		
 		///
-		/// 必须定期调用来更新玩家的状态
+		/// Must be called regularly to update the player's state
 		/// 
 		void Update();
 
 		///
-		/// 处理键盘按键
+		/// Handle keyboard keys
 		/// 
 		/// @param key_map
 		///		Reference to std::unordered_map<unsigned int, bool>
@@ -62,7 +62,7 @@ namespace portal
 		void HandleKeys( std::unordered_map<unsigned int, bool>& key_map );
 
 		///
-		/// 处理鼠标按键
+		/// Handle mouse buttons
 		/// 
 		/// @param button_map
 		///		Reference to std::unordered_map<int, bool>
@@ -70,13 +70,13 @@ namespace portal
 		void HandleMouse( std::unordered_map<int, bool>& button_map, Portal& portal_left, Portal& portal_right );
 
 		///
-		/// 改变观察方向
+		/// Change look direction
 		/// 
 		/// @param yaw_angle
-		///		垂直角度
+		///		Vertical angle
 		/// 
 		/// @param pitch_angle
-		///		水平角度
+		///		Horizontal angle
 		/// 
 		void Look( float yaw_angle, float pitch_angle );
 
@@ -85,15 +85,15 @@ namespace portal
 		
 	private:
 		physics::Physics& mPhysics;
-		std::unique_ptr<physics::Physics::Capsule> mCollisionCapsule; //< 胶囊碰撞体
+		std::unique_ptr<physics::Physics::Capsule> mCollisionCapsule; //< Capsule collider
 		float mPreviousYPos;
-		bool mIsGrounded;  //< 玩家是否站在“地面”上
+		bool mIsGrounded;  //< Whether the player is standing on the "ground"
 
-		// 地面检测
-		int mDownCastHitNumber; //< 地面射线击中物体的次数
+		// Ground check
+		int mDownCastHitNumber; //< How many times the ground ray hit something
 
 		std::shared_ptr<Camera> mMainCamera;
-		bool mIsRunning;                     //< 是否在跑步
+		bool mIsRunning;                     //< Whether we're running
 
 		bool mMouseLeftPressed = false;
 		bool mMouseRightPressed = false;
